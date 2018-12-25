@@ -18,9 +18,6 @@ infoProducer text = build $ ActionInfoSetProducer text
 infoCreator :: Text -> PdfBuilder
 infoCreator text = build $ ActionInfoSetCreator text
 
-finalize :: PdfBuilder
-finalize = build ActionFinalize
-
 font :: PdfBuilder
 font = build ActionFont
 
@@ -32,7 +29,7 @@ page = do
 -----------------------------------------------
 
 run :: Text -> PdfBuilderM b -> PdfDocument
-run creationDate (PdfBuilderM _ actions) =
+run creationDate (PdfBuilderM _ userActions) =
   L.foldl
   (\pdfDoc action -> execute action pdfDoc)
   ( PdfDocument
@@ -68,6 +65,7 @@ run creationDate (PdfBuilderM _ actions) =
   )
   actions
   where
+    actions = userActions ++ [ActionFinalize]
     version = "1.3"
     rootObjId = 1
     pagesObjId = 2
