@@ -38,8 +38,8 @@ samplePdfDoc = do
   let creationDate = pack $ formatLocalTime timeZone now
   return $ run creationDate $ do
     info
-      >> infoProducer "ppppp"
-      >> infoCreator "cccc"
+      >> infoProducer "the producer"
+      >> infoCreator "the creator"
     font
     page
       >> pageSize sizeLETTER
