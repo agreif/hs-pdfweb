@@ -264,6 +264,7 @@ data Action =
   | ActionFont
   | ActionResources
   | ActionPage
+  | ActionPageSetSize PdfPageSize
 
 build :: Action -> PdfBuilder
 build action = PdfBuilderM () [action]
@@ -376,6 +377,26 @@ instance IsExecutableAction Action where
       { pdfTrailerSize = succ $ pdfTrailerSize (pdfDocumentTrailer pdfDoc)
       }
     }
+
+
+  execute (ActionPageSetSize size) pdfDoc =
+    pdfDoc
+    { pdfDocumentPages =
+      pdfPages
+      { pdfPagesKids =
+        prevPages
+        ++
+        [ lastPage
+          { pdfPageSize = size
+          }
+        ]
+      }
+    }
+    where
+      pdfPages = pdfDocumentPages pdfDoc
+      prevPages = L.init $ pdfPagesKids pdfPages
+      lastPage = L.last $ pdfPagesKids pdfPages
+
   execute (ActionResources) pdfDoc =
     pdfDoc
     { pdfDocumentNextObjId = succ $ pdfDocumentNextObjId pdfDoc
