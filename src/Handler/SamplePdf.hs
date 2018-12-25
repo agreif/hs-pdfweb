@@ -35,4 +35,3 @@ samplePdfDoc = do
       >> infoCreator "cccc"
     font
     page
-    finalize
