@@ -1,6 +1,6 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Handler.Graphics.PDFKit.Pdf where
+module Handler.Graphics.PDFKit.PDFKit where
 
 import Import
 import qualified Data.List as L
