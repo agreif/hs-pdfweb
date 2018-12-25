@@ -54,7 +54,6 @@ run creationDate (PdfBuilderM _ actions) =
       , pdfPagesKids = []
       }
     , pdfDocumentFont = Nothing
-    , pdfDocumentPage = Nothing
     , pdfDocumentXref =
       PdfXref
       { pdfXrefPositions = []
