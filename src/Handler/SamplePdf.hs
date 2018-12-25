@@ -17,8 +17,15 @@ getSamplePdfJsonR = do
     , encodePdf' pdfDoc
     )
 
-getSamplePdfDocR :: Handler TypedContent
-getSamplePdfDocR = do
+getSamplePdfInlineR :: Handler TypedContent
+getSamplePdfInlineR = do
+  pdfDoc <- samplePdfDoc
+  addHeader "Content-Disposition" $
+    T.concat ["inline; filename=\"", "samplepdf.pdf", "\""]
+  respond (encodeUtf8 "application/pdf") $ encodePdf pdfDoc
+
+getSamplePdfDownloadR :: Handler TypedContent
+getSamplePdfDownloadR = do
   pdfDoc <- samplePdfDoc
   addHeader "Content-Disposition" $
     T.concat ["attachment; filename=\"", "samplepdf.pdf", "\""]
