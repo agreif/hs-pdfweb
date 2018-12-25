@@ -4,6 +4,7 @@ module Handler.Graphics.PDFKit.Types where
 
 import Import
 import qualified Data.List as L
+import qualified Data.Text as T
 import qualified Data.ByteString.Char8 as B8
 import Handler.Graphics.PDFKit.Helpers
 
@@ -17,7 +18,6 @@ data PdfDocument = PdfDocument
   , pdfDocumentRoot :: PdfRoot
   , pdfDocumentPages :: PdfPages
   , pdfDocumentFont :: Maybe PdfFont
-  , pdfDocumentPage :: Maybe PdfPage
   , pdfDocumentTrailer :: PdfTrailer
   , pdfDocumentXref :: PdfXref
   , pdfDocumentStartXref :: Maybe Int
@@ -29,7 +29,8 @@ instance ToByteStringLines PdfDocument where
     ++ L.foldl (\acc x -> acc ++ x) [] objectBlocks
     ++ footerLines
     where
-      (headerLines, objectBlocks, footerLines) = pdfDocumentByteStringLineBlocks pdfDoc
+      (headerLines, objectBlocks, footerLines) =
+        pdfDocumentByteStringLineBlocks pdfDoc
 
 instance ToJSON PdfDocument where
   toJSON o = object
@@ -39,7 +40,6 @@ instance ToJSON PdfDocument where
     , "root" .= pdfDocumentRoot o
     , "pages" .= pdfDocumentPages o
     , "font" .= pdfDocumentFont o
-    , "page" .= pdfDocumentPage o
     , "trailer" .= pdfDocumentTrailer o
     , "xref" .= pdfDocumentXref o
     , "startxref" .= pdfDocumentStartXref o
@@ -57,7 +57,7 @@ data PdfInfo = PdfInfo
 instance ToByteStringLines PdfInfo where
   toByteStringLines pdfInfo _ =
     [ encodeUtf8 $ (pack $ show $ pdfInfoObjId pdfInfo) ++ " 0 obj"
-    , encodeUtf8 "% -------------- info"
+    , encodeUtf8 $ "% ------------------------------------------------------ info " ++ (intToText $ pdfInfoObjId pdfInfo)
     , encodeUtf8 "<<"
     , encodeUtf8 $ "/Producer (" ++ pdfInfoProducer pdfInfo ++ ")"
     , encodeUtf8 $ "/Creator (" ++ pdfInfoCreator pdfInfo ++ ")"
@@ -84,7 +84,7 @@ data PdfRoot = PdfRoot
 instance ToByteStringLines PdfRoot where
   toByteStringLines pdfRoot pdfDoc =
     [ encodeUtf8 $ (pack $ show $ pdfRootObjId pdfRoot) ++ " 0 obj"
-    , encodeUtf8 "% -------------- root"
+    , encodeUtf8 $ "% ------------------------------------------------------ root " ++ (intToText $ pdfRootObjId pdfRoot)
     , encodeUtf8 "<<"
     , encodeUtf8 $ "/Type /Catalog"
     , encodeUtf8 $ "/Pages " ++ (ref $ pdfPagesObjId $ pdfDocumentPages pdfDoc)
@@ -102,21 +102,18 @@ instance ToJSON PdfRoot where
 
 data PdfPages = PdfPages
   { pdfPagesObjId :: Int
-  , pdfPagesKids :: [Text]
+  , pdfPagesKids :: [PdfPage]
   }
 
 instance ToByteStringLines PdfPages where
-  toByteStringLines pdfPages pdfDoc =
+  toByteStringLines pdfPages _ =
     [ encodeUtf8 $ (pack $ show $ pdfPagesObjId pdfPages) ++ " 0 obj"
-    , encodeUtf8 "% -------------- pages"
+    , encodeUtf8 $ "% ------------------------------------------------------ pages " ++ (intToText $ pdfPagesObjId pdfPages)
     , encodeUtf8 "<<"
     , encodeUtf8 $ "/Type /Pages"
-    -- , encodeUtf8 $ "/Count " ++ (intToText . L.length $ pdfPagesKids pdfPages)
-    -- , encodeUtf8 $ "/Kids []"
-    , encodeUtf8 $ "/Count 1"
-    , encodeUtf8 $ "/Kids [" ++ (case pdfDocumentPage pdfDoc of
-                                   Just pdfPage -> ref $ pdfPageObjId $ pdfPage
-                                   _ -> ""
+    , encodeUtf8 $ "/Count " ++ (intToText $ length $ pdfPagesKids pdfPages)
+    , encodeUtf8 $ "/Kids [" ++ (T.intercalate "  " $
+                                 L.map (\pdfPage -> ref $ pdfPageObjId pdfPage) (pdfPagesKids pdfPages)
                                 ) ++ "]"
     , encodeUtf8 ">>"
     , encodeUtf8 "endobj"
@@ -137,7 +134,7 @@ data PdfFont = PdfFont
 instance ToByteStringLines PdfFont where
   toByteStringLines pdfFont _ =
     [ encodeUtf8 $ (pack $ show $ pdfFontObjId pdfFont) ++ " 0 obj"
-    , encodeUtf8 "% -------------- Font"
+    , encodeUtf8 $ "% ------------------------------------------------------ Font " ++ (intToText $ pdfFontObjId pdfFont)
     , encodeUtf8 "<<"
     , encodeUtf8 $ "/Type /Font"
     , encodeUtf8 $ "/BaseFont /Helvetica"
@@ -161,7 +158,7 @@ data PdfResources = PdfResources
 instance ToByteStringLines PdfResources where
   toByteStringLines pdfResources pdfDoc =
     [ encodeUtf8 $ (pack $ show $ pdfResourcesObjId pdfResources) ++ " 0 obj"
-    , encodeUtf8 "% -------------- Resources"
+    , encodeUtf8 $ "% ------------------------------------------------------ Resources " ++ (intToText $ pdfResourcesObjId pdfResources)
     , encodeUtf8 "<<"
     , encodeUtf8 $ "/ProcSet [/PDF /Text /ImageB /ImageC /ImageI]"
     , encodeUtf8 $ "/Font <<"
@@ -188,7 +185,7 @@ data PdfPage = PdfPage
 instance ToByteStringLines PdfPage where
   toByteStringLines pdfPage pdfDoc =
     [ encodeUtf8 $ (pack $ show $ pdfPageObjId pdfPage) ++ " 0 obj"
-    , encodeUtf8 "% -------------- Page"
+    , encodeUtf8 $ "% ------------------------------------------------------ Page " ++ (intToText $ pdfPageObjId pdfPage)
     , encodeUtf8 "<<"
     , encodeUtf8 $ "/Type /Page"
     , encodeUtf8 $ "/Parent " ++ (ref $ pdfPagesObjId $ pdfDocumentPages pdfDoc)
@@ -216,7 +213,7 @@ data PdfXref = PdfXref
 instance ToByteStringLines PdfXref where
   toByteStringLines pdfXref pdfDoc =
     [ encodeUtf8 "xref"
-    , encodeUtf8 "% -------------- xref"
+    , encodeUtf8 "% ------------------------------------------------------ xref"
     , encodeUtf8 $ "0 " ++ (intToText $ 1 + (pdfTrailerSize $ pdfDocumentTrailer pdfDoc))
     , encodeUtf8 $ "0000000000 65535 f"
     ]
@@ -238,7 +235,7 @@ data PdfTrailer = PdfTrailer
 instance ToByteStringLines PdfTrailer where
   toByteStringLines pdfTrailer pdfDoc =
     [ encodeUtf8 "trailer"
-    , encodeUtf8 "% -------------- trailer"
+    , encodeUtf8 "% ------------------------------------------------------ trailer"
     , encodeUtf8 "<<"
     , encodeUtf8 $ "/Size " ++ (intToText $ pdfTrailerSize pdfTrailer)
     , encodeUtf8 $ "/Root " ++ (ref $ pdfRootObjId $ pdfDocumentRoot pdfDoc)
@@ -282,15 +279,15 @@ pdfDocumentByteStringLineBlocks pdfDoc =
            Just pdfFont -> toByteStringLines pdfFont pdfDoc
            _ -> []
        )
-    , ( case pdfDocumentPage pdfDoc of
-           Just pdfPage ->
-             toByteStringLines pdfPage pdfDoc
-             ++ case pdfPageResources pdfPage of
-                  Just pdfResources -> toByteStringLines pdfResources pdfDoc
-                  _ -> []
-           _ -> []
-       )
     ]
+    ++ ( L.map (\pdfPage ->
+                  toByteStringLines pdfPage pdfDoc
+                  ++ case pdfPageResources pdfPage of
+                       Just pdfResources -> toByteStringLines pdfResources pdfDoc
+                       _ -> []
+               )
+         (pdfPagesKids $ pdfDocumentPages pdfDoc)
+       )
   , ( toByteStringLines (pdfDocumentXref pdfDoc) pdfDoc )
     ++ ( toByteStringLines (pdfDocumentTrailer pdfDoc) pdfDoc )
     ++ [ encodeUtf8 "startxref"
@@ -356,11 +353,17 @@ instance IsExecutableAction Action where
   execute (ActionPage) pdfDoc =
     pdfDoc
     { pdfDocumentNextObjId = succ $ pdfDocumentNextObjId pdfDoc
-    , pdfDocumentPage =
-        Just $ PdfPage
-        { pdfPageObjId = pdfDocumentNextObjId pdfDoc
-        , pdfPageResources = Nothing
-        }
+    , pdfDocumentPages =
+      (pdfDocumentPages pdfDoc)
+      { pdfPagesKids =
+          (pdfPagesKids $ pdfDocumentPages pdfDoc)
+          ++
+          [ PdfPage
+            { pdfPageObjId = pdfDocumentNextObjId pdfDoc
+            , pdfPageResources = Nothing
+            }
+          ]
+      }
     , pdfDocumentTrailer =
       (pdfDocumentTrailer pdfDoc)
       { pdfTrailerSize = succ $ pdfTrailerSize (pdfDocumentTrailer pdfDoc)
@@ -369,21 +372,28 @@ instance IsExecutableAction Action where
   execute (ActionResources) pdfDoc =
     pdfDoc
     { pdfDocumentNextObjId = succ $ pdfDocumentNextObjId pdfDoc
-    , pdfDocumentPage =
-        case (pdfDocumentPage pdfDoc) of
-          Just pdfPage ->
-            Just $ pdfPage
-            { pdfPageResources =
+    , pdfDocumentPages =
+      pdfPages
+      { pdfPagesKids =
+        prevPages
+        ++
+        [ lastPage
+          { pdfPageResources =
               Just $ PdfResources
               { pdfResourcesObjId = pdfDocumentNextObjId pdfDoc
               }
-            }
-          _ -> Nothing
+          }
+        ]
+      }
     , pdfDocumentTrailer =
       (pdfDocumentTrailer pdfDoc)
       { pdfTrailerSize = succ $ pdfTrailerSize (pdfDocumentTrailer pdfDoc)
       }
     }
+    where
+      pdfPages = pdfDocumentPages pdfDoc
+      prevPages = L.init $ pdfPagesKids pdfPages
+      lastPage = L.last $ pdfPagesKids pdfPages
 
 -----------------------------------------------
 
