@@ -24,11 +24,10 @@ finalize = build ActionFinalize
 font :: PdfBuilder
 font = build ActionFont
 
-resources :: PdfBuilder
-resources = build ActionResources
-
 page :: PdfBuilder
-page = build ActionPage
+page = do
+  build ActionPage
+  build ActionResources
 
 -----------------------------------------------
 
@@ -55,7 +54,6 @@ run creationDate (PdfBuilderM _ actions) =
       , pdfPagesKids = []
       }
     , pdfDocumentFont = Nothing
-    , pdfDocumentResources = Nothing
     , pdfDocumentPage = Nothing
     , pdfDocumentXref =
       PdfXref
@@ -75,4 +73,3 @@ run creationDate (PdfBuilderM _ actions) =
     rootObjId = 1
     pagesObjId = 2
     nextObjId = 3
-

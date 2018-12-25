@@ -17,7 +17,6 @@ data PdfDocument = PdfDocument
   , pdfDocumentRoot :: PdfRoot
   , pdfDocumentPages :: PdfPages
   , pdfDocumentFont :: Maybe PdfFont
-  , pdfDocumentResources :: Maybe PdfResources
   , pdfDocumentPage :: Maybe PdfPage
   , pdfDocumentTrailer :: PdfTrailer
   , pdfDocumentXref :: PdfXref
@@ -40,7 +39,6 @@ instance ToJSON PdfDocument where
     , "root" .= pdfDocumentRoot o
     , "pages" .= pdfDocumentPages o
     , "font" .= pdfDocumentFont o
-    , "resources" .= pdfDocumentResources o
     , "page" .= pdfDocumentPage o
     , "trailer" .= pdfDocumentTrailer o
     , "xref" .= pdfDocumentXref o
@@ -184,6 +182,7 @@ instance ToJSON PdfResources where
 
 data PdfPage = PdfPage
   { pdfPageObjId :: Int
+  , pdfPageResources :: Maybe PdfResources
   }
 
 instance ToByteStringLines PdfPage where
@@ -194,9 +193,9 @@ instance ToByteStringLines PdfPage where
     , encodeUtf8 $ "/Type /Page"
     , encodeUtf8 $ "/Parent " ++ (ref $ pdfPagesObjId $ pdfDocumentPages pdfDoc)
     , encodeUtf8 $ "/MediaBox [0 0 612 792]"
-    , encodeUtf8 $ "/Resources " ++ case pdfDocumentResources pdfDoc of
-                               Just pdfResources -> ref $ pdfResourcesObjId pdfResources
-                               _ -> ""
+    , encodeUtf8 $ "/Resources " ++ case pdfPageResources pdfPage of
+                                      Just pdfResources -> (ref $ pdfResourcesObjId pdfResources)
+                                      _ -> ""
     , encodeUtf8 ">>"
     , encodeUtf8 ">>"
     , encodeUtf8 "endobj"
@@ -205,6 +204,7 @@ instance ToByteStringLines PdfPage where
 instance ToJSON PdfPage where
   toJSON o = object
     [ "objId" .= pdfPageObjId o
+    , "resources" .= pdfPageResources o
     ]
 
 -----------------------------------------------
@@ -282,12 +282,12 @@ pdfDocumentByteStringLineBlocks pdfDoc =
            Just pdfFont -> toByteStringLines pdfFont pdfDoc
            _ -> []
        )
-    , ( case pdfDocumentResources pdfDoc of
-           Just pdfResources -> toByteStringLines pdfResources pdfDoc
-           _ -> []
-       )
     , ( case pdfDocumentPage pdfDoc of
-           Just pdfPage -> toByteStringLines pdfPage pdfDoc
+           Just pdfPage ->
+             toByteStringLines pdfPage pdfDoc
+             ++ case pdfPageResources pdfPage of
+                  Just pdfResources -> toByteStringLines pdfResources pdfDoc
+                  _ -> []
            _ -> []
        )
     ]
@@ -353,25 +353,32 @@ instance IsExecutableAction Action where
       { pdfTrailerSize = succ $ pdfTrailerSize (pdfDocumentTrailer pdfDoc)
       }
     }
-  execute (ActionResources) pdfDoc =
-    pdfDoc
-    { pdfDocumentNextObjId = succ $ pdfDocumentNextObjId pdfDoc
-    , pdfDocumentResources =
-        Just $ PdfResources
-        { pdfResourcesObjId = pdfDocumentNextObjId pdfDoc
-        }
-    , pdfDocumentTrailer =
-      (pdfDocumentTrailer pdfDoc)
-      { pdfTrailerSize = succ $ pdfTrailerSize (pdfDocumentTrailer pdfDoc)
-      }
-    }
   execute (ActionPage) pdfDoc =
     pdfDoc
     { pdfDocumentNextObjId = succ $ pdfDocumentNextObjId pdfDoc
     , pdfDocumentPage =
         Just $ PdfPage
         { pdfPageObjId = pdfDocumentNextObjId pdfDoc
+        , pdfPageResources = Nothing
         }
+    , pdfDocumentTrailer =
+      (pdfDocumentTrailer pdfDoc)
+      { pdfTrailerSize = succ $ pdfTrailerSize (pdfDocumentTrailer pdfDoc)
+      }
+    }
+  execute (ActionResources) pdfDoc =
+    pdfDoc
+    { pdfDocumentNextObjId = succ $ pdfDocumentNextObjId pdfDoc
+    , pdfDocumentPage =
+        case (pdfDocumentPage pdfDoc) of
+          Just pdfPage ->
+            Just $ pdfPage
+            { pdfPageResources =
+              Just $ PdfResources
+              { pdfResourcesObjId = pdfDocumentNextObjId pdfDoc
+              }
+            }
+          _ -> Nothing
     , pdfDocumentTrailer =
       (pdfDocumentTrailer pdfDoc)
       { pdfTrailerSize = succ $ pdfTrailerSize (pdfDocumentTrailer pdfDoc)
