@@ -8,8 +8,15 @@ see 'src/Handler/Pdf.hs'
 ## Sample
 
 ```haskell
-getPdfDocR :: Handler TypedContent
-getPdfDocR = do
+getSamplePdfInlineR :: Handler TypedContent
+getSamplePdfInlineR = do
+  pdfDoc <- samplePdfDoc
+  addHeader "Content-Disposition" $
+    T.concat ["inline; filename=\"", "samplepdf.pdf", "\""]
+  respond (encodeUtf8 "application/pdf") $ encodePdf pdfDoc
+
+getSamplePdfDownloadR :: Handler TypedContent
+getSamplePdfDownloadR = do
   pdfDoc <- samplePdfDoc
   addHeader "Content-Disposition" $
     T.concat ["attachment; filename=\"", "samplepdf.pdf", "\""]
@@ -22,10 +29,13 @@ samplePdfDoc = do
   let creationDate = pack $ formatLocalTime timeZone now
   return $ run creationDate $ do
     info
-      >> infoProducer "ppppp"
-      >> infoCreator "cccc"
+      >> infoProducer "the producer"
+      >> infoCreator "the creator"
     font
-    resources
     page
-    finalize
+      >> pageSize sizeLETTER
+      >> pageSizeCustom 100 200.99
+      >> pageLayout landscape
+      >> pageMargin 123
+      >> pageMargins 123 124 125 126
 ```
