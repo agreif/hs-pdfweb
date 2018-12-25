@@ -180,6 +180,7 @@ instance ToJSON PdfResources where
 data PdfPage = PdfPage
   { pdfPageObjId :: Int
   , pdfPageSize :: PdfPageSize
+  , pdfPageMargins :: PdfPageMargins
   , pdfPageLayout :: PdfPageLayout
   , pdfPageResources :: Maybe PdfResources
   }
@@ -209,6 +210,7 @@ instance ToJSON PdfPage where
   toJSON o = object
     [ "objId" .= pdfPageObjId o
     , "size" .= pdfPageSize o
+    , "margins" .= pdfPageMargins o
     , "layout" .= ( T.pack $ case pdfPageLayout o of
                                Portrait -> "portrait"
                                Landscape -> "landscape" )
@@ -272,6 +274,8 @@ data Action =
   | ActionPage
   | ActionPageSetSize PdfPageSize
   | ActionPageSetLayout PdfPageLayout
+  | ActionPageSetMargin Double
+  | ActionPageSetMargins Double Double Double Double
   | ActionPageSetSizeCustom Double Double
 
 build :: Action -> PdfBuilder
@@ -380,6 +384,7 @@ instance IsExecutableAction Action where
           [ PdfPage
             { pdfPageObjId = pdfDocumentNextObjId pdfDoc
             , pdfPageSize = sizeA4
+            , pdfPageMargins = defaultPageMargins
             , pdfPageLayout = Portrait
             , pdfPageResources = Nothing
             }
@@ -443,6 +448,39 @@ instance IsExecutableAction Action where
     where
       (pdfPages, initPages, lastPage) = pdfPagesTuple pdfDoc
 
+  execute (ActionPageSetMargin x) pdfDoc =
+    pdfDoc
+    { pdfDocumentPages =
+      pdfPages
+      { pdfPagesKids =
+        initPages
+        ++
+        [ lastPage
+          { pdfPageMargins = PdfPageMargins x x x x
+          }
+        ]
+      }
+    }
+    where
+      (pdfPages, initPages, lastPage) = pdfPagesTuple pdfDoc
+
+  execute (ActionPageSetMargins top left bottom right) pdfDoc =
+    pdfDoc
+    { pdfDocumentPages =
+      pdfPages
+      { pdfPagesKids =
+        initPages
+        ++
+        [ lastPage
+          { pdfPageMargins =
+            PdfPageMargins top left bottom right
+          }
+        ]
+      }
+    }
+    where
+      (pdfPages, initPages, lastPage) = pdfPagesTuple pdfDoc
+
   execute (ActionResources) pdfDoc =
     pdfDoc
     { pdfDocumentNextObjId = succ $ pdfDocumentNextObjId pdfDoc
@@ -469,11 +507,31 @@ instance IsExecutableAction Action where
 
 -----------------------------------------------
 
+defaultPageMargins :: PdfPageMargins
+defaultPageMargins = PdfPageMargins 72 72 72 72
+
+data PdfPageMargins =
+  PdfPageMargins
+  { pdfPageMarginTop :: Double
+  , pdfPageMarginLeft :: Double
+  , pdfPageMarginBottom :: Double
+  , pdfPageMarginRight :: Double
+  }
+
+instance ToJSON PdfPageMargins where
+  toJSON o = object
+    [ "top" .= pdfPageMarginTop o
+    , "left" .= pdfPageMarginLeft o
+    , "bottom" .= pdfPageMarginBottom o
+    , "right" .= pdfPageMarginRight o
+    ]
+
 data PdfPageLayout = Portrait | Landscape
   deriving Show
 
 portrait :: PdfPageLayout
 portrait = Portrait
+
 landscape :: PdfPageLayout
 landscape = Landscape
 
