@@ -26,6 +26,8 @@ page = do
   build ActionPage
   build ActionResources
 
+pageSize :: PdfPageSize -> PdfBuilder
+pageSize size = build $ ActionPageSetSize size
 -----------------------------------------------
 -----------------------------------------------
 
