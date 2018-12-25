@@ -42,4 +42,5 @@ samplePdfDoc = do
       >> infoCreator "cccc"
     font
     page
-      >> pageSize pdfPageSizeA3
+      >> pageSize sizeLETTER
+      >> pageLayout portrait

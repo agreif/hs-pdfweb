@@ -265,6 +265,7 @@ data Action =
   | ActionResources
   | ActionPage
   | ActionPageSetSize PdfPageSize
+  | ActionPageSetLayout PdfPageLayout
 
 build :: Action -> PdfBuilder
 build action = PdfBuilderM () [action]
@@ -371,7 +372,7 @@ instance IsExecutableAction Action where
           ++
           [ PdfPage
             { pdfPageObjId = pdfDocumentNextObjId pdfDoc
-            , pdfPageSize = pdfPageSizeA4
+            , pdfPageSize = sizeA4
             , pdfPageLayout = Portrait
             , pdfPageResources = Nothing
             }
@@ -392,6 +393,22 @@ instance IsExecutableAction Action where
         ++
         [ lastPage
           { pdfPageSize = size
+          }
+        ]
+      }
+    }
+    where
+      (pdfPages, initPages, lastPage) = pdfPagesTuple pdfDoc
+
+  execute (ActionPageSetLayout lay) pdfDoc =
+    pdfDoc
+    { pdfDocumentPages =
+      pdfPages
+      { pdfPagesKids =
+        initPages
+        ++
+        [ lastPage
+          { pdfPageLayout = lay
           }
         ]
       }
@@ -427,6 +444,11 @@ instance IsExecutableAction Action where
 
 data PdfPageLayout = Portrait | Landscape
 
+portrait :: PdfPageLayout
+portrait = Portrait
+landscape :: PdfPageLayout
+landscape = Landscape
+
 data PdfPageSize = PdfPageSize
   { pdfPageSizeWidth :: Double
   , pdfPageSizeHeight :: Double
@@ -438,106 +460,106 @@ instance ToJSON PdfPageSize where
     , "height" .= pdfPageSizeHeight o
     ]
 
-pdfPageSize4A0 :: PdfPageSize
-pdfPageSize4A0 = PdfPageSize 4767.87 6740.79
-pdfPageSize2A0 :: PdfPageSize
-pdfPageSize2A0 = PdfPageSize 3370.39 4767.87
-pdfPageSizeA0 :: PdfPageSize
-pdfPageSizeA0 = PdfPageSize 2383.94 3370.39
-pdfPageSizeA1 :: PdfPageSize
-pdfPageSizeA1 = PdfPageSize 1683.78 2383.94
-pdfPageSizeA2 :: PdfPageSize
-pdfPageSizeA2 = PdfPageSize 1190.55 1683.78
-pdfPageSizeA3 :: PdfPageSize
-pdfPageSizeA3 = PdfPageSize 841.89 1190.55
-pdfPageSizeA4 :: PdfPageSize
-pdfPageSizeA4 = PdfPageSize 595.28 841.89
-pdfPageSizeA5 :: PdfPageSize
-pdfPageSizeA5 = PdfPageSize 419.53 595.28
-pdfPageSizeA6 :: PdfPageSize
-pdfPageSizeA6 = PdfPageSize 297.64 419.53
-pdfPageSizeA7 :: PdfPageSize
-pdfPageSizeA7 = PdfPageSize 209.76 297.64
-pdfPageSizeA8 :: PdfPageSize
-pdfPageSizeA8 = PdfPageSize 147.40 209.76
-pdfPageSizeA9 :: PdfPageSize
-pdfPageSizeA9 = PdfPageSize 104.88 147.40
-pdfPageSizeA10 :: PdfPageSize
-pdfPageSizeA10 = PdfPageSize 73.70 104.88
-pdfPageSizeB0 :: PdfPageSize
-pdfPageSizeB0 = PdfPageSize 2834.65 4008.19
-pdfPageSizeB1 :: PdfPageSize
-pdfPageSizeB1 = PdfPageSize 2004.09 2834.65
-pdfPageSizeB2 :: PdfPageSize
-pdfPageSizeB2 = PdfPageSize 1417.32 2004.09
-pdfPageSizeB3 :: PdfPageSize
-pdfPageSizeB3 = PdfPageSize 1000.63 1417.32
-pdfPageSizeB4 :: PdfPageSize
-pdfPageSizeB4 = PdfPageSize 708.66 1000.63
-pdfPageSizeB5 :: PdfPageSize
-pdfPageSizeB5 = PdfPageSize 498.90 708.66
-pdfPageSizeB6 :: PdfPageSize
-pdfPageSizeB6 = PdfPageSize 354.33 498.90
-pdfPageSizeB7 :: PdfPageSize
-pdfPageSizeB7 = PdfPageSize 249.45 354.33
-pdfPageSizeB8 :: PdfPageSize
-pdfPageSizeB8 = PdfPageSize 175.75 249.45
-pdfPageSizeB9 :: PdfPageSize
-pdfPageSizeB9 = PdfPageSize 124.72 175.75
-pdfPageSizeB10 :: PdfPageSize
-pdfPageSizeB10 = PdfPageSize 87.87 124.72
-pdfPageSizeC0 :: PdfPageSize
-pdfPageSizeC0 = PdfPageSize 2599.37 3676.54
-pdfPageSizeC1 :: PdfPageSize
-pdfPageSizeC1 = PdfPageSize 1836.85 2599.37
-pdfPageSizeC2 :: PdfPageSize
-pdfPageSizeC2 = PdfPageSize 1298.27 1836.85
-pdfPageSizeC3 :: PdfPageSize
-pdfPageSizeC3 = PdfPageSize 918.43 1298.27
-pdfPageSizeC4 :: PdfPageSize
-pdfPageSizeC4 = PdfPageSize 649.13 918.43
-pdfPageSizeC5 :: PdfPageSize
-pdfPageSizeC5 = PdfPageSize 459.21 649.13
-pdfPageSizeC6 :: PdfPageSize
-pdfPageSizeC6 = PdfPageSize 323.15 459.21
-pdfPageSizeC7 :: PdfPageSize
-pdfPageSizeC7 = PdfPageSize 229.61 323.15
-pdfPageSizeC8 :: PdfPageSize
-pdfPageSizeC8 = PdfPageSize 161.57 229.61
-pdfPageSizeC9 :: PdfPageSize
-pdfPageSizeC9 = PdfPageSize 113.39 161.57
-pdfPageSizeC10 :: PdfPageSize
-pdfPageSizeC10 = PdfPageSize 79.37 113.39
-pdfPageSizeRA0 :: PdfPageSize
-pdfPageSizeRA0 = PdfPageSize 2437.80 3458.27
-pdfPageSizeRA1 :: PdfPageSize
-pdfPageSizeRA1 = PdfPageSize 1729.13 2437.80
-pdfPageSizeRA2 :: PdfPageSize
-pdfPageSizeRA2 = PdfPageSize 1218.90 1729.13
-pdfPageSizeRA3 :: PdfPageSize
-pdfPageSizeRA3 = PdfPageSize 864.57 1218.90
-pdfPageSizeRA4 :: PdfPageSize
-pdfPageSizeRA4 = PdfPageSize 609.45 864.57
-pdfPageSizeSRA0 :: PdfPageSize
-pdfPageSizeSRA0 = PdfPageSize 2551.18 3628.35
-pdfPageSizeSRA1 :: PdfPageSize
-pdfPageSizeSRA1 = PdfPageSize 1814.17 2551.18
-pdfPageSizeSRA2 :: PdfPageSize
-pdfPageSizeSRA2 = PdfPageSize 1275.59 1814.17
-pdfPageSizeSRA3 :: PdfPageSize
-pdfPageSizeSRA3 = PdfPageSize 907.09 1275.59
-pdfPageSizeSRA4 :: PdfPageSize
-pdfPageSizeSRA4 = PdfPageSize 637.80 907.09
-pdfPageSizeEXECUTIVE :: PdfPageSize
-pdfPageSizeEXECUTIVE = PdfPageSize 521.86 756.00
-pdfPageSizeFOLIO :: PdfPageSize
-pdfPageSizeFOLIO = PdfPageSize 612.00 936.00
-pdfPageSizeLEGAL :: PdfPageSize
-pdfPageSizeLEGAL = PdfPageSize 612.00 1008.00
-pdfPageSizeLETTER :: PdfPageSize
-pdfPageSizeLETTER = PdfPageSize 612.00 792.00
-pdfPageSizeTABLOID :: PdfPageSize
-pdfPageSizeTABLOID = PdfPageSize 792.00 1224.00
+size4A0 :: PdfPageSize
+size4A0 = PdfPageSize 4767.87 6740.79
+size2A0 :: PdfPageSize
+size2A0 = PdfPageSize 3370.39 4767.87
+sizeA0 :: PdfPageSize
+sizeA0 = PdfPageSize 2383.94 3370.39
+sizeA1 :: PdfPageSize
+sizeA1 = PdfPageSize 1683.78 2383.94
+sizeA2 :: PdfPageSize
+sizeA2 = PdfPageSize 1190.55 1683.78
+sizeA3 :: PdfPageSize
+sizeA3 = PdfPageSize 841.89 1190.55
+sizeA4 :: PdfPageSize
+sizeA4 = PdfPageSize 595.28 841.89
+sizeA5 :: PdfPageSize
+sizeA5 = PdfPageSize 419.53 595.28
+sizeA6 :: PdfPageSize
+sizeA6 = PdfPageSize 297.64 419.53
+sizeA7 :: PdfPageSize
+sizeA7 = PdfPageSize 209.76 297.64
+sizeA8 :: PdfPageSize
+sizeA8 = PdfPageSize 147.40 209.76
+sizeA9 :: PdfPageSize
+sizeA9 = PdfPageSize 104.88 147.40
+sizeA10 :: PdfPageSize
+sizeA10 = PdfPageSize 73.70 104.88
+sizeB0 :: PdfPageSize
+sizeB0 = PdfPageSize 2834.65 4008.19
+sizeB1 :: PdfPageSize
+sizeB1 = PdfPageSize 2004.09 2834.65
+sizeB2 :: PdfPageSize
+sizeB2 = PdfPageSize 1417.32 2004.09
+sizeB3 :: PdfPageSize
+sizeB3 = PdfPageSize 1000.63 1417.32
+sizeB4 :: PdfPageSize
+sizeB4 = PdfPageSize 708.66 1000.63
+sizeB5 :: PdfPageSize
+sizeB5 = PdfPageSize 498.90 708.66
+sizeB6 :: PdfPageSize
+sizeB6 = PdfPageSize 354.33 498.90
+sizeB7 :: PdfPageSize
+sizeB7 = PdfPageSize 249.45 354.33
+sizeB8 :: PdfPageSize
+sizeB8 = PdfPageSize 175.75 249.45
+sizeB9 :: PdfPageSize
+sizeB9 = PdfPageSize 124.72 175.75
+sizeB10 :: PdfPageSize
+sizeB10 = PdfPageSize 87.87 124.72
+sizeC0 :: PdfPageSize
+sizeC0 = PdfPageSize 2599.37 3676.54
+sizeC1 :: PdfPageSize
+sizeC1 = PdfPageSize 1836.85 2599.37
+sizeC2 :: PdfPageSize
+sizeC2 = PdfPageSize 1298.27 1836.85
+sizeC3 :: PdfPageSize
+sizeC3 = PdfPageSize 918.43 1298.27
+sizeC4 :: PdfPageSize
+sizeC4 = PdfPageSize 649.13 918.43
+sizeC5 :: PdfPageSize
+sizeC5 = PdfPageSize 459.21 649.13
+sizeC6 :: PdfPageSize
+sizeC6 = PdfPageSize 323.15 459.21
+sizeC7 :: PdfPageSize
+sizeC7 = PdfPageSize 229.61 323.15
+sizeC8 :: PdfPageSize
+sizeC8 = PdfPageSize 161.57 229.61
+sizeC9 :: PdfPageSize
+sizeC9 = PdfPageSize 113.39 161.57
+sizeC10 :: PdfPageSize
+sizeC10 = PdfPageSize 79.37 113.39
+sizeRA0 :: PdfPageSize
+sizeRA0 = PdfPageSize 2437.80 3458.27
+sizeRA1 :: PdfPageSize
+sizeRA1 = PdfPageSize 1729.13 2437.80
+sizeRA2 :: PdfPageSize
+sizeRA2 = PdfPageSize 1218.90 1729.13
+sizeRA3 :: PdfPageSize
+sizeRA3 = PdfPageSize 864.57 1218.90
+sizeRA4 :: PdfPageSize
+sizeRA4 = PdfPageSize 609.45 864.57
+sizeSRA0 :: PdfPageSize
+sizeSRA0 = PdfPageSize 2551.18 3628.35
+sizeSRA1 :: PdfPageSize
+sizeSRA1 = PdfPageSize 1814.17 2551.18
+sizeSRA2 :: PdfPageSize
+sizeSRA2 = PdfPageSize 1275.59 1814.17
+sizeSRA3 :: PdfPageSize
+sizeSRA3 = PdfPageSize 907.09 1275.59
+sizeSRA4 :: PdfPageSize
+sizeSRA4 = PdfPageSize 637.80 907.09
+sizeEXECUTIVE :: PdfPageSize
+sizeEXECUTIVE = PdfPageSize 521.86 756.00
+sizeFOLIO :: PdfPageSize
+sizeFOLIO = PdfPageSize 612.00 936.00
+sizeLEGAL :: PdfPageSize
+sizeLEGAL = PdfPageSize 612.00 1008.00
+sizeLETTER :: PdfPageSize
+sizeLETTER = PdfPageSize 612.00 792.00
+sizeTABLOID :: PdfPageSize
+sizeTABLOID = PdfPageSize 792.00 1224.00
 
 -----------------------------------------------
 
