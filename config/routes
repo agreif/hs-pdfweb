@@ -10,5 +10,5 @@
 
 /comments CommentR POST
 
-/pdfJson PdfJsonR GET
-/pdfDoc PdfDocR GET
+/pdfJson SamplePdfJsonR GET
+/pdfDoc SamplePdfDocR GET

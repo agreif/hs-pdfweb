@@ -9,16 +9,16 @@ import Handler.Graphics.PDFKit.Types
 import Handler.Graphics.PDFKit.Helpers
 import Handler.Graphics.PDFKit.Encode
 
-getPdfJsonR :: Handler Value
-getPdfJsonR = do
+getSamplePdfJsonR :: Handler Value
+getSamplePdfJsonR = do
   pdfDoc <- samplePdfDoc
   return $ toJSON
     ( pdfDoc
     , encodePdf' pdfDoc
     )
 
-getPdfDocR :: Handler TypedContent
-getPdfDocR = do
+getSamplePdfDocR :: Handler TypedContent
+getSamplePdfDocR = do
   pdfDoc <- samplePdfDoc
   addHeader "Content-Disposition" $
     T.concat ["attachment; filename=\"", "samplepdf.pdf", "\""]
