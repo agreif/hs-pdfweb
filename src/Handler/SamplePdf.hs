@@ -43,4 +43,4 @@ samplePdfDoc = do
     font
     page
       >> pageSize sizeLETTER
-      >> pageLayout portrait
+      >> pageLayout landscape
