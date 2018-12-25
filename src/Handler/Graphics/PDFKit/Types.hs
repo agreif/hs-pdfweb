@@ -319,18 +319,21 @@ instance IsExecutableAction Action where
       , pdfTrailerInfo = Just $ ref $ pdfDocumentNextObjId pdfDoc
       }
     }
+
   execute (ActionInfoSetProducer text) pdfDoc =
     pdfDoc
     { pdfDocumentInfo = case (pdfDocumentInfo pdfDoc) of
         Just pdfInfo -> Just $ pdfInfo { pdfInfoProducer = text}
         _ -> Nothing
     }
+
   execute (ActionInfoSetCreator text) pdfDoc =
     pdfDoc
     { pdfDocumentInfo = case (pdfDocumentInfo pdfDoc) of
         Just pdfInfo -> Just $ pdfInfo { pdfInfoCreator = text}
         _ -> Nothing
     }
+
   execute (ActionFinalize) pdfDoc =
     pdfDoc
     { pdfDocumentXref =
@@ -344,6 +347,7 @@ instance IsExecutableAction Action where
       objectLines = L.map B8.unlines objectBlocks
       lengths = L.map length objectLines
       (positions, _) = L.foldl (\(ls,accl) len -> (ls ++ [accl+len], accl+len)) ([headerLength], headerLength) lengths
+
   execute (ActionFont) pdfDoc =
     pdfDoc
     { pdfDocumentNextObjId = succ $ pdfDocumentNextObjId pdfDoc
@@ -356,6 +360,7 @@ instance IsExecutableAction Action where
       { pdfTrailerSize = succ $ pdfTrailerSize (pdfDocumentTrailer pdfDoc)
       }
     }
+
   execute (ActionPage) pdfDoc =
     pdfDoc
     { pdfDocumentNextObjId = succ $ pdfDocumentNextObjId pdfDoc
@@ -378,13 +383,12 @@ instance IsExecutableAction Action where
       }
     }
 
-
   execute (ActionPageSetSize size) pdfDoc =
     pdfDoc
     { pdfDocumentPages =
       pdfPages
       { pdfPagesKids =
-        prevPages
+        initPages
         ++
         [ lastPage
           { pdfPageSize = size
@@ -393,9 +397,7 @@ instance IsExecutableAction Action where
       }
     }
     where
-      pdfPages = pdfDocumentPages pdfDoc
-      prevPages = L.init $ pdfPagesKids pdfPages
-      lastPage = L.last $ pdfPagesKids pdfPages
+      (pdfPages, initPages, lastPage) = pdfPagesTuple pdfDoc
 
   execute (ActionResources) pdfDoc =
     pdfDoc
@@ -403,7 +405,7 @@ instance IsExecutableAction Action where
     , pdfDocumentPages =
       pdfPages
       { pdfPagesKids =
-        prevPages
+        initPages
         ++
         [ lastPage
           { pdfPageResources =
@@ -419,9 +421,7 @@ instance IsExecutableAction Action where
       }
     }
     where
-      pdfPages = pdfDocumentPages pdfDoc
-      prevPages = L.init $ pdfPagesKids pdfPages
-      lastPage = L.last $ pdfPagesKids pdfPages
+      (pdfPages, initPages, lastPage) = pdfPagesTuple pdfDoc
 
 -----------------------------------------------
 
@@ -538,6 +538,15 @@ pdfPageSizeLETTER :: PdfPageSize
 pdfPageSizeLETTER = PdfPageSize 612.00 792.00
 pdfPageSizeTABLOID :: PdfPageSize
 pdfPageSizeTABLOID = PdfPageSize 792.00 1224.00
+
+-----------------------------------------------
+
+pdfPagesTuple :: PdfDocument -> (PdfPages, [PdfPage], PdfPage)
+pdfPagesTuple pdfDoc = (pdfPages, initPages, lastPage)
+  where
+    pdfPages = pdfDocumentPages pdfDoc
+    initPages = L.init $ pdfPagesKids pdfPages
+    lastPage = L.last $ pdfPagesKids pdfPages
 
 -----------------------------------------------
 
