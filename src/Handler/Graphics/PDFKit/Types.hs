@@ -180,6 +180,7 @@ instance ToJSON PdfResources where
 data PdfPage = PdfPage
   { pdfPageObjId :: Int
   , pdfPageSize :: PdfPageSize
+  , pdfPageLayout :: PdfPageLayout
   , pdfPageResources :: Maybe PdfResources
   }
 
@@ -365,6 +366,7 @@ instance IsExecutableAction Action where
           [ PdfPage
             { pdfPageObjId = pdfDocumentNextObjId pdfDoc
             , pdfPageSize = pdfPageSizeA4
+            , pdfPageLayout = Portrait
             , pdfPageResources = Nothing
             }
           ]
@@ -401,6 +403,8 @@ instance IsExecutableAction Action where
       lastPage = L.last $ pdfPagesKids pdfPages
 
 -----------------------------------------------
+
+data PdfPageLayout = Portrait | Landscape
 
 data PdfPageSize = PdfPageSize
   { pdfPageSizeWidth :: Double
