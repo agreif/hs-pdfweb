@@ -29,6 +29,9 @@ page = do
 pageSize :: PdfPageSize -> PdfBuilder
 pageSize size = build $ ActionPageSetSize size
 
+pageSizeCustom :: Double -> Double -> PdfBuilder
+pageSizeCustom width height = build $ ActionPageSetSizeCustom width height
+
 pageLayout :: PdfPageLayout -> PdfBuilder
 pageLayout lay = build $ ActionPageSetLayout lay
 

@@ -272,6 +272,7 @@ data Action =
   | ActionPage
   | ActionPageSetSize PdfPageSize
   | ActionPageSetLayout PdfPageLayout
+  | ActionPageSetSizeCustom Double Double
 
 build :: Action -> PdfBuilder
 build action = PdfBuilderM () [action]
@@ -399,6 +400,26 @@ instance IsExecutableAction Action where
         ++
         [ lastPage
           { pdfPageSize = size
+          }
+        ]
+      }
+    }
+    where
+      (pdfPages, initPages, lastPage) = pdfPagesTuple pdfDoc
+
+  execute (ActionPageSetSizeCustom width height) pdfDoc =
+    pdfDoc
+    { pdfDocumentPages =
+      pdfPages
+      { pdfPagesKids =
+        initPages
+        ++
+        [ lastPage
+          { pdfPageSize =
+            PdfPageSize
+            { pdfPageSizeWidth = width
+            , pdfPageSizeHeight = height
+            }
           }
         ]
       }
