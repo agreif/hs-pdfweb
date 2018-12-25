@@ -191,9 +191,10 @@ instance ToByteStringLines PdfPage where
     , encodeUtf8 "<<"
     , encodeUtf8 $ "/Type /Page"
     , encodeUtf8 $ "/Parent " ++ (ref $ pdfPagesObjId $ pdfDocumentPages pdfDoc)
+    , encodeUtf8 $ "% " ++ (pack $ show $ pdfPageLayout pdfPage)
     , encodeUtf8 $ "/MediaBox [0 0 "
-      ++ (doubleToText $ pdfPageSizeWidth $ pdfPageSize pdfPage) ++ " "
-      ++ (doubleToText $ pdfPageSizeHeight $ pdfPageSize pdfPage) ++ "]"
+      ++ (doubleToText $ pdfPageSizeWidth pageSize) ++ " "
+      ++ (doubleToText $ pdfPageSizeHeight pageSize) ++ "]"
     , encodeUtf8 $ "/Resources " ++ case pdfPageResources pdfPage of
                                       Just pdfResources -> (ref $ pdfResourcesObjId pdfResources)
                                       _ -> ""
@@ -201,11 +202,16 @@ instance ToByteStringLines PdfPage where
     , encodeUtf8 ">>"
     , encodeUtf8 "endobj"
     ]
+    where
+      pageSize = applyLayout (pdfPageSize pdfPage) (pdfPageLayout pdfPage)
 
 instance ToJSON PdfPage where
   toJSON o = object
     [ "objId" .= pdfPageObjId o
     , "size" .= pdfPageSize o
+    , "layout" .= ( T.pack $ case pdfPageLayout o of
+                               Portrait -> "portrait"
+                               Landscape -> "landscape" )
     , "resources" .= pdfPageResources o
     ]
 
@@ -443,11 +449,19 @@ instance IsExecutableAction Action where
 -----------------------------------------------
 
 data PdfPageLayout = Portrait | Landscape
+  deriving Show
 
 portrait :: PdfPageLayout
 portrait = Portrait
 landscape :: PdfPageLayout
 landscape = Landscape
+
+applyLayout :: PdfPageSize -> PdfPageLayout -> PdfPageSize
+applyLayout size Portrait = size
+applyLayout (PdfPageSize {pdfPageSizeWidth = w, pdfPageSizeHeight = h }) Landscape =
+  PdfPageSize { pdfPageSizeWidth = h
+              , pdfPageSizeHeight = w
+              }
 
 data PdfPageSize = PdfPageSize
   { pdfPageSizeWidth :: Double
