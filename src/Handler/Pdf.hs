@@ -21,7 +21,7 @@ getPdfDocR :: Handler TypedContent
 getPdfDocR = do
   pdfDoc <- samplePdfDoc
   addHeader "Content-Disposition" $
-    T.concat ["attachment; filename=\"", "alexpdf.pdf", "\""]
+    T.concat ["attachment; filename=\"", "samplepdf.pdf", "\""]
   respond (encodeUtf8 "application/pdf") $ encodePdf pdfDoc
 
 samplePdfDoc :: Handler PdfDocument
@@ -38,10 +38,6 @@ samplePdfDoc = do
     page
     finalize
 
-currentTimeZone :: Handler TimeZone
-currentTimeZone = do
-  timeZone <- liftIO $ getCurrentTimeZone
-  return timeZone
 
 -----------------------------------------------
 
@@ -525,3 +521,8 @@ ref objId = intToText objId ++ " 0 R"
 
 formatXrefPos :: Int -> Text
 formatXrefPos i = pack $ printf "%010d" i
+
+currentTimeZone :: Handler TimeZone
+currentTimeZone = do
+  timeZone <- liftIO $ getCurrentTimeZone
+  return timeZone
