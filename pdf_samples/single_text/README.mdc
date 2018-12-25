@@ -1,4 +1,4 @@
-```js
+```javascript
 // create a document and pipe to a blob
 var doc = new PDFDocument();
 var stream = doc.pipe(blobStream());
