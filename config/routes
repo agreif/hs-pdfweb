@@ -10,5 +10,6 @@
 
 /comments CommentR POST
 
-/pdfJson SamplePdfJsonR GET
-/pdfDoc SamplePdfDocR GET
+/samplePdfJson SamplePdfJsonR GET
+/samplePdfInline SamplePdfInlineR GET
+/samplePdfDownload SamplePdfDownloadR GET
