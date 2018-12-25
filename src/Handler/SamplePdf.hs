@@ -34,6 +34,5 @@ samplePdfDoc = do
       >> infoProducer "ppppp"
       >> infoCreator "cccc"
     font
-    resources
     page
     finalize
