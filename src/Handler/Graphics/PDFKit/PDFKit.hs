@@ -30,10 +30,16 @@ pageSize :: PdfPageSize -> PdfBuilder
 pageSize size = build $ ActionPageSetSize size
 
 pageSizeCustom :: Double -> Double -> PdfBuilder
-pageSizeCustom width height = build $ ActionPageSetSizeCustom width height
+pageSizeCustom w h = build $ ActionPageSetSizeCustom w h
 
 pageLayout :: PdfPageLayout -> PdfBuilder
-pageLayout lay = build $ ActionPageSetLayout lay
+pageLayout l = build $ ActionPageSetLayout l
+
+pageMargin :: Double -> PdfBuilder
+pageMargin x = build $ ActionPageSetMargin x
+
+pageMargins :: Double -> Double -> Double -> Double -> PdfBuilder
+pageMargins t l b r = build $ ActionPageSetMargins t l b r
 
 -----------------------------------------------
 
