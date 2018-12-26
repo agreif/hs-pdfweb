@@ -39,7 +39,7 @@ samplePdfDoc = do
     info
       >> infoProducer "the producer"
       >> infoCreator "the creator"
-    font
+    font fontCourier
     page
       >> pageSize sizeLETTER
       >> pageLayout landscape
