@@ -6,7 +6,6 @@ import Import
 import qualified Data.List as L
 import qualified Data.ByteString.Char8 as B8
 import Handler.Graphics.PDFKit.Pdf
-import Handler.Graphics.PDFKit.Helpers
 
 info :: PdfBuilder
 info = build ActionInfoSetup
@@ -46,41 +45,13 @@ run :: Text -> PdfBuilderM b -> PdfDocument
 run creationDate (PdfBuilderM _ userActions) =
   L.foldl
   (\pdfDoc action -> execute action pdfDoc)
-  ( PdfDocument
-    { pdfDocumentVersion = version
-    , pdfDocumentHeaderLines = [ encodeUtf8 $ "%PDF-" ++ version
-                               , "%" ++ B8.pack ['\xff', '\xff', '\xff', '\xff']
-                               ]
-    , pdfDocumentCreationDate = creationDate
-    , pdfDocumentNextObjId = nextObjId
-    , pdfDocumentInfo = Nothing
-    , pdfDocumentRoot =
-      PdfRoot
-      { pdfRootObjId = rootObjId
-      , pdfRootPages = ref pagesObjId
-      }
-    , pdfDocumentPages =
-      PdfPages
-      { pdfPagesObjId = pagesObjId
-      , pdfPagesKids = []
-      }
-    , pdfDocumentFont = Nothing
-    , pdfDocumentXref =
-      PdfXref
-      { pdfXrefPositions = []
-      }
-    , pdfDocumentTrailer =
-      PdfTrailer
-      { pdfTrailerSize = pred nextObjId
-      , pdfTrailerInfo = Nothing
-      }
-    , pdfDocumentStartXref = Nothing
-    }
-  )
-  actions
-  where
-    actions = userActions ++ [ActionFinalize]
-    version = "1.3"
-    rootObjId = 1
-    pagesObjId = 2
-    nextObjId = 3
+  (initialPdfDocument creationDate)
+  (userActions ++ [ActionFinalize])
+
+-----------------------------------------------
+
+encodePdf :: PdfDocument -> ByteString
+encodePdf pdfDoc = B8.unlines $ toByteStringLines pdfDoc pdfDoc
+
+encodePdf' :: PdfDocument -> [Text]
+encodePdf' pdfDoc = map decodeUtf8 $ toByteStringLines pdfDoc pdfDoc
