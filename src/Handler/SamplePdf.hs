@@ -7,7 +7,6 @@ import qualified Data.Text as T
 import Handler.Graphics.PDFKit.PDFKit
 import Handler.Graphics.PDFKit.Pdf
 import Handler.Graphics.PDFKit.Helpers
-import Handler.Graphics.PDFKit.Encode
 
 getSamplePdfJsonR :: Handler Value
 getSamplePdfJsonR = do

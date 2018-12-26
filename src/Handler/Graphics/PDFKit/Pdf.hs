@@ -22,6 +22,44 @@ data PdfDocument = PdfDocument
   , pdfDocumentStartXref :: Maybe Int
   }
 
+initialPdfDocument :: Text -> PdfDocument
+initialPdfDocument creationDate =
+  PdfDocument
+  { pdfDocumentVersion = version
+  , pdfDocumentHeaderLines = [ encodeUtf8 $ "%PDF-" ++ version
+                             , "%" ++ B8.pack ['\xff', '\xff', '\xff', '\xff']
+                             ]
+  , pdfDocumentCreationDate = creationDate
+  , pdfDocumentNextObjId = nextObjId
+  , pdfDocumentInfo = Nothing
+  , pdfDocumentRoot =
+      PdfRoot
+      { pdfRootObjId = rootObjId
+      , pdfRootPages = ref pagesObjId
+      }
+  , pdfDocumentPages =
+      PdfPages
+      { pdfPagesObjId = pagesObjId
+      , pdfPagesKids = []
+      }
+  , pdfDocumentFont = Nothing
+  , pdfDocumentXref =
+      PdfXref
+      { pdfXrefPositions = []
+      }
+  , pdfDocumentTrailer =
+      PdfTrailer
+      { pdfTrailerSize = pred nextObjId
+      , pdfTrailerInfo = Nothing
+      }
+  , pdfDocumentStartXref = Nothing
+  }
+  where
+    version = "1.3"
+    rootObjId = 1
+    pagesObjId = 2
+    nextObjId = 3
+
 instance ToByteStringLines PdfDocument where
   toByteStringLines pdfDoc _ =
     headerLines
