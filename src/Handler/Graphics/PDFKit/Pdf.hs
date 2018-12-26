@@ -196,25 +196,28 @@ instance ToByteStringLines PdfFont where
 
 data PdfResources = PdfResources
   { pdfResourcesObjId :: Int
+  , pdfResourcesFonts :: [PdfFont]
   }
 
 instance ToJSON PdfResources where
   toJSON o = object
     [ "objId" .= pdfResourcesObjId o
+    , "fonts" .= pdfResourcesFonts o
     ]
 
 instance ToByteStringLines PdfResources where
-  toByteStringLines pdfResources pdfDoc =
+  toByteStringLines pdfResources _ =
     [ encodeUtf8 $ (pack $ show $ pdfResourcesObjId pdfResources) ++ " 0 obj"
     , encodeUtf8 $ "% ------------------------------------------------------ Resources " ++ (intToText $ pdfResourcesObjId pdfResources)
     , encodeUtf8 "<<"
     , encodeUtf8 $ "/ProcSet [/PDF /Text /ImageB /ImageC /ImageI]"
-    , encodeUtf8 $ "/Font <<"
-    , encodeUtf8 $ "/F1 " ++ case pdfDocumentFont pdfDoc of
-                               Just pdfFont -> ref $ pdfFontObjId pdfFont
-                               _ -> ""
-    , encodeUtf8 ">>"
-    , encodeUtf8 ">>"
+    ]
+    ++ ( L.map (\ pdfFont -> encodeUtf8 $
+                 "/Font << /F-------- " ++ (ref $ pdfFontObjId pdfFont) ++ " >>"
+               ) $ pdfResourcesFonts pdfResources
+       )
+    ++
+    [ encodeUtf8 ">>"
     , encodeUtf8 "endobj"
     ]
 
@@ -253,7 +256,6 @@ instance ToByteStringLines PdfPage where
     , encodeUtf8 $ "/Resources " ++ case pdfPageResources pdfPage of
                                       Just pdfResources -> (ref $ pdfResourcesObjId pdfResources)
                                       _ -> ""
-    , encodeUtf8 ">>"
     , encodeUtf8 ">>"
     , encodeUtf8 "endobj"
     ]
@@ -767,6 +769,7 @@ instance IsExecutableAction Action where
           { pdfPageResources =
               Just $ PdfResources
               { pdfResourcesObjId = pdfDocumentNextObjId pdfDoc
+              , pdfResourcesFonts = []
               }
           }
         ]
