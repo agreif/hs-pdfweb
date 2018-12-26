@@ -166,11 +166,17 @@ instance ToByteStringLines PdfPages where
 
 data PdfFont = PdfFont
   { pdfFontObjId :: Int
+  , pdfFontBaseFont :: Text
+  , pdfFontSubtype :: Text
+  , pdfFontEncoding :: Text
   }
 
 instance ToJSON PdfFont where
   toJSON o = object
     [ "objId" .= pdfFontObjId o
+    , "baseFont" .= pdfFontBaseFont o
+    , "subtype" .= pdfFontSubtype o
+    , "encoding" .= pdfFontEncoding o
     ]
 
 instance ToByteStringLines PdfFont where
@@ -179,9 +185,9 @@ instance ToByteStringLines PdfFont where
     , encodeUtf8 $ "% ------------------------------------------------------ Font " ++ (intToText $ pdfFontObjId pdfFont)
     , encodeUtf8 "<<"
     , encodeUtf8 $ "/Type /Font"
-    , encodeUtf8 $ "/BaseFont /Helvetica"
-    , encodeUtf8 $ "/Subtype /Type1"
-    , encodeUtf8 $ "/Encoding /WinAnsiEncoding"
+    , encodeUtf8 $ "/BaseFont /" ++ pdfFontBaseFont pdfFont
+    , encodeUtf8 $ "/Subtype /"  ++ pdfFontSubtype pdfFont
+    , encodeUtf8 $ "/Encoding /" ++ pdfFontEncoding pdfFont
     , encodeUtf8 ">>"
     , encodeUtf8 "endobj"
     ]
@@ -447,6 +453,43 @@ sizeTABLOID = PdfPageSize 792.00 1224.00
 
 -----------------------------------------------
 
+data PdfStandardFont = PdfStandardFont
+  { pdfStandardFontBaseFont :: Text
+  , pdfStandardFontSubtype :: Text
+  , pdfStandardFontEncoding :: Text
+  }
+
+fontCourier :: PdfStandardFont
+fontCourier = PdfStandardFont "Courier" "Type1" "WinAnsiEncoding"
+fontCourierBold :: PdfStandardFont
+fontCourierBold = PdfStandardFont "Courier-Bold" "Type1" "WinAnsiEncoding"
+fontCourierOblique :: PdfStandardFont
+fontCourierOblique = PdfStandardFont "Courier-Oblique" "Type1" "WinAnsiEncoding"
+fontCourierBoldOblique :: PdfStandardFont
+fontCourierBoldOblique = PdfStandardFont "Courier-BoldOblique" "Type1" "WinAnsiEncoding"
+fontHelvetica :: PdfStandardFont
+fontHelvetica = PdfStandardFont "Helvetica" "Type1" "WinAnsiEncoding"
+fontHelveticaBold :: PdfStandardFont
+fontHelveticaBold = PdfStandardFont "Helvetica-Bold" "Type1" "WinAnsiEncoding"
+fontHelveticaOblique :: PdfStandardFont
+fontHelveticaOblique = PdfStandardFont "Helvetica-Oblique" "Type1" "WinAnsiEncoding"
+fontHelveticaBoldOblique :: PdfStandardFont
+fontHelveticaBoldOblique = PdfStandardFont "Helvetica-BoldOblique" "Type1" "WinAnsiEncoding"
+fontTimesRoman :: PdfStandardFont
+fontTimesRoman = PdfStandardFont "Times-Roman" "Type1" "WinAnsiEncoding"
+fontTimesBold :: PdfStandardFont
+fontTimesBold = PdfStandardFont "Times-Bold" "Type1" "WinAnsiEncoding"
+fontTimesItalic :: PdfStandardFont
+fontTimesItalic = PdfStandardFont "Times-Italic" "Type1" "WinAnsiEncoding"
+fontTimesBoldItalic :: PdfStandardFont
+fontTimesBoldItalic = PdfStandardFont "Times-BoldItalic" "Type1" "WinAnsiEncoding"
+fontSymbol :: PdfStandardFont
+fontSymbol = PdfStandardFont "Symbol" "Type1" "WinAnsiEncoding"
+fontZapfDingbats :: PdfStandardFont
+fontZapfDingbats = PdfStandardFont "ZapfDingbats" "Type1" "WinAnsiEncoding"
+
+-----------------------------------------------
+
 class ToByteStringLines b where
   toByteStringLines :: b -> PdfDocument -> [ByteString]
 
@@ -524,7 +567,7 @@ data Action =
   | ActionInfoSetProducer Text
   | ActionInfoSetCreator Text
   | ActionFinalize
-  | ActionFont
+  | ActionFont PdfStandardFont
   | ActionResources
   | ActionPage
   | ActionPageSetSize PdfPageSize
@@ -584,18 +627,25 @@ instance IsExecutableAction Action where
       lengths = L.map length objectLines
       (positions, _) = L.foldl (\(ls,accl) len -> (ls ++ [accl+len], accl+len)) ([headerLength], headerLength) lengths
 
-  execute (ActionFont) pdfDoc =
+  execute (ActionFont standardFont) pdfDoc =
     pdfDoc
     { pdfDocumentNextObjId = succ $ pdfDocumentNextObjId pdfDoc
     , pdfDocumentFont =
-        Just $ PdfFont
-        { pdfFontObjId = pdfDocumentNextObjId pdfDoc
-        }
+        Just $ buildFont (pdfDocumentNextObjId pdfDoc) standardFont
     , pdfDocumentTrailer =
       (pdfDocumentTrailer pdfDoc)
       { pdfTrailerSize = succ $ pdfTrailerSize (pdfDocumentTrailer pdfDoc)
       }
     }
+    where
+      buildFont :: Int -> PdfStandardFont -> PdfFont
+      buildFont objId stdFont =
+        PdfFont
+        { pdfFontObjId = objId
+        , pdfFontBaseFont = pdfStandardFontBaseFont stdFont
+        , pdfFontSubtype = pdfStandardFontSubtype stdFont
+        , pdfFontEncoding = pdfStandardFontEncoding stdFont
+        }
 
   execute (ActionPage) pdfDoc =
     pdfDoc

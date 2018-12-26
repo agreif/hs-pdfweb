@@ -11,13 +11,13 @@ info :: PdfBuilder
 info = build ActionInfoSetup
 
 infoProducer :: Text -> PdfBuilder
-infoProducer text = build $ ActionInfoSetProducer text
+infoProducer = build . ActionInfoSetProducer
 
 infoCreator :: Text -> PdfBuilder
-infoCreator text = build $ ActionInfoSetCreator text
+infoCreator = build . ActionInfoSetCreator
 
-font :: PdfBuilder
-font = build ActionFont
+font :: PdfStandardFont -> PdfBuilder
+font = build . ActionFont
 
 page :: PdfBuilder
 page = do
@@ -25,13 +25,13 @@ page = do
   build ActionResources
 
 pageSize :: PdfPageSize -> PdfBuilder
-pageSize size = build $ ActionPageSetSize size
+pageSize = build . ActionPageSetSize
 
 pageSizeCustom :: Double -> Double -> PdfBuilder
 pageSizeCustom w h = build $ ActionPageSetSizeCustom w h
 
 pageLayout :: PdfPageLayout -> PdfBuilder
-pageLayout l = build $ ActionPageSetLayout l
+pageLayout = build . ActionPageSetLayout
 
 pageMargin :: Double -> PdfBuilder
 pageMargin x = build $ ActionPageSetMargin x
