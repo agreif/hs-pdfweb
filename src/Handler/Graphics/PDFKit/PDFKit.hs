@@ -34,7 +34,7 @@ pageLayout :: PdfPageLayout -> PdfBuilder
 pageLayout = build . ActionPageSetLayout
 
 pageMargin :: Double -> PdfBuilder
-pageMargin x = build $ ActionPageSetMargin x
+pageMargin = build . ActionPageSetMargin
 
 pageMargins :: Double -> Double -> Double -> Double -> PdfBuilder
 pageMargins t l b r = build $ ActionPageSetMargins t l b r
