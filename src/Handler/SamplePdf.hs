@@ -5,7 +5,7 @@ module Handler.SamplePdf where
 import Import
 import qualified Data.Text as T
 import Handler.Graphics.PDFKit.PDFKit
-import Handler.Graphics.PDFKit.Types
+import Handler.Graphics.PDFKit.Pdf
 import Handler.Graphics.PDFKit.Helpers
 import Handler.Graphics.PDFKit.Encode
 

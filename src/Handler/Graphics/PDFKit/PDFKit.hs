@@ -5,9 +5,8 @@ module Handler.Graphics.PDFKit.PDFKit where
 import Import
 import qualified Data.List as L
 import qualified Data.ByteString.Char8 as B8
-import Handler.Graphics.PDFKit.Types
+import Handler.Graphics.PDFKit.Pdf
 import Handler.Graphics.PDFKit.Helpers
-
 
 info :: PdfBuilder
 info = build ActionInfoSetup
