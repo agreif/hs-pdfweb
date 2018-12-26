@@ -16,7 +16,7 @@ data PdfDocument = PdfDocument
   , pdfDocumentInfo :: Maybe PdfInfo
   , pdfDocumentRoot :: PdfRoot
   , pdfDocumentPages :: PdfPages
-  , pdfDocumentFont :: Maybe PdfFont
+  , pdfDocumentStandardFont :: PdfStandardFont
   , pdfDocumentTrailer :: PdfTrailer
   , pdfDocumentXref :: PdfXref
   , pdfDocumentStartXref :: Maybe Int
@@ -29,7 +29,7 @@ instance ToJSON PdfDocument where
     , "info" .= pdfDocumentInfo o
     , "root" .= pdfDocumentRoot o
     , "pages" .= pdfDocumentPages o
-    , "font" .= pdfDocumentFont o
+    , "standardFont" .= pdfDocumentStandardFont o
     , "trailer" .= pdfDocumentTrailer o
     , "xref" .= pdfDocumentXref o
     , "startxref" .= pdfDocumentStartXref o
@@ -64,7 +64,7 @@ initialPdfDocument creationDate =
       { pdfPagesObjId = pagesObjId
       , pdfPagesKids = []
       }
-  , pdfDocumentFont = Nothing
+  , pdfDocumentStandardFont = fontHelvetica
   , pdfDocumentXref =
       PdfXref
       { pdfXrefPositions = []
@@ -228,7 +228,7 @@ data PdfPage = PdfPage
   , pdfPageSize :: PdfPageSize
   , pdfPageMargins :: PdfPageMargins
   , pdfPageLayout :: PdfPageLayout
-  , pdfPageResources :: Maybe PdfResources
+  , pdfPageResources :: PdfResources
   }
 
 instance ToJSON PdfPage where
@@ -253,9 +253,7 @@ instance ToByteStringLines PdfPage where
     , encodeUtf8 $ "/MediaBox [0 0 "
       ++ (doubleToText $ pdfPageSizeWidth pageSize) ++ " "
       ++ (doubleToText $ pdfPageSizeHeight pageSize) ++ "]"
-    , encodeUtf8 $ "/Resources " ++ case pdfPageResources pdfPage of
-                                      Just pdfResources -> (ref $ pdfResourcesObjId pdfResources)
-                                      _ -> ""
+    , encodeUtf8 $ "/Resources " ++ (ref $ pdfResourcesObjId $ pdfPageResources pdfPage)
     , encodeUtf8 ">>"
     , encodeUtf8 "endobj"
     ]
@@ -461,6 +459,13 @@ data PdfStandardFont = PdfStandardFont
   , pdfStandardFontEncoding :: Text
   }
 
+instance ToJSON PdfStandardFont where
+  toJSON o = object
+    [ "baseFont" .= pdfStandardFontBaseFont o
+    , "subtype" .= pdfStandardFontSubtype o
+    , "encoding" .= pdfStandardFontEncoding o
+    ]
+
 fontCourier :: PdfStandardFont
 fontCourier = PdfStandardFont "Courier" "Type1" "WinAnsiEncoding"
 fontCourierBold :: PdfStandardFont
@@ -541,19 +546,19 @@ pdfDocumentByteStringLineBlocks pdfDoc =
            Just pdfInfo -> toByteStringLines pdfInfo pdfDoc
            _ -> []
        )
-    , ( case pdfDocumentFont pdfDoc of
-           Just pdfFont -> toByteStringLines pdfFont pdfDoc
-           _ -> []
-       )
+    -- , ( case pdfDocumentFont pdfDoc of
+    --        Just pdfFont -> toByteStringLines pdfFont pdfDoc
+    --        _ -> []
+    --    )
     ]
-    ++ ( L.map (\pdfPage ->
-                  toByteStringLines pdfPage pdfDoc
-                  ++ case pdfPageResources pdfPage of
-                       Just pdfResources -> toByteStringLines pdfResources pdfDoc
-                       _ -> []
-               )
-         (pdfPagesKids $ pdfDocumentPages pdfDoc)
-       )
+    ++
+    ( L.map (\pdfPage ->
+                (toByteStringLines pdfPage pdfDoc)
+                ++
+                (toByteStringLines (pdfPageResources pdfPage) pdfDoc)
+            )
+      $ pdfPagesKids $ pdfDocumentPages pdfDoc
+    )
   , ( toByteStringLines (pdfDocumentXref pdfDoc) pdfDoc )
     ++ ( toByteStringLines (pdfDocumentTrailer pdfDoc) pdfDoc )
     ++ [ encodeUtf8 "startxref"
@@ -570,13 +575,14 @@ data Action =
   | ActionInfoSetCreator Text
   | ActionFinalize
   | ActionFont PdfStandardFont
-  | ActionResources
+  -- | ActionResources
   | ActionPage
   | ActionPageSetSize PdfPageSize
   | ActionPageSetLayout PdfPageLayout
   | ActionPageSetMargin Double
   | ActionPageSetMargins Double Double Double Double
   | ActionPageSetSizeCustom Double Double
+  | ActionText Text Double Double
 
 build :: Action -> PdfBuilder
 build action = PdfBuilderM () [action]
@@ -586,10 +592,10 @@ build action = PdfBuilderM () [action]
 instance IsExecutableAction Action where
   execute ActionInfoSetup pdfDoc =
     pdfDoc
-    { pdfDocumentNextObjId = succ $ pdfDocumentNextObjId pdfDoc
+    { pdfDocumentNextObjId = nextObjId
     , pdfDocumentInfo =
         Just $ PdfInfo
-        { pdfInfoObjId = pdfDocumentNextObjId pdfDoc
+        { pdfInfoObjId = infoObjId
         , pdfInfoProducer = "hs-pdfkit"
         , pdfInfoCreator = "hs-pdfkit"
         , pdfInfoCreationDate = "D:" ++ pdfDocumentCreationDate pdfDoc ++ "Z"
@@ -597,9 +603,12 @@ instance IsExecutableAction Action where
     , pdfDocumentTrailer =
       (pdfDocumentTrailer pdfDoc)
       { pdfTrailerSize = succ $ pdfTrailerSize (pdfDocumentTrailer pdfDoc)
-      , pdfTrailerInfo = Just $ ref $ pdfDocumentNextObjId pdfDoc
+      , pdfTrailerInfo = Just $ ref infoObjId
       }
     }
+    where
+      infoObjId = pdfDocumentNextObjId pdfDoc
+      nextObjId = pdfDocumentNextObjId pdfDoc + 1
 
   execute (ActionInfoSetProducer text) pdfDoc =
     pdfDoc
@@ -615,7 +624,7 @@ instance IsExecutableAction Action where
         _ -> Nothing
     }
 
-  execute (ActionFinalize) pdfDoc =
+  execute ActionFinalize pdfDoc =
     pdfDoc
     { pdfDocumentXref =
       PdfXref
@@ -631,38 +640,47 @@ instance IsExecutableAction Action where
 
   execute (ActionFont standardFont) pdfDoc =
     pdfDoc
-    { pdfDocumentNextObjId = succ $ pdfDocumentNextObjId pdfDoc
-    , pdfDocumentFont =
-        Just $ buildFont (pdfDocumentNextObjId pdfDoc) standardFont
-    , pdfDocumentTrailer =
-      (pdfDocumentTrailer pdfDoc)
-      { pdfTrailerSize = succ $ pdfTrailerSize (pdfDocumentTrailer pdfDoc)
-      }
+    { pdfDocumentStandardFont = standardFont
     }
-    where
-      buildFont :: Int -> PdfStandardFont -> PdfFont
-      buildFont objId stdFont =
-        PdfFont
-        { pdfFontObjId = objId
-        , pdfFontBaseFont = pdfStandardFontBaseFont stdFont
-        , pdfFontSubtype = pdfStandardFontSubtype stdFont
-        , pdfFontEncoding = pdfStandardFontEncoding stdFont
-        }
 
-  execute (ActionPage) pdfDoc =
+  -- execute (ActionFont standardFont) pdfDoc =
+  --   pdfDoc
+  --   { pdfDocumentNextObjId = succ $ pdfDocumentNextObjId pdfDoc
+  --   , pdfDocumentFont =
+  --       Just $ buildFont (pdfDocumentNextObjId pdfDoc) standardFont
+  --   , pdfDocumentTrailer =
+  --     (pdfDocumentTrailer pdfDoc)
+  --     { pdfTrailerSize = succ $ pdfTrailerSize (pdfDocumentTrailer pdfDoc)
+  --     }
+  --   }
+  --   where
+  --     buildFont :: Int -> PdfStandardFont -> PdfFont
+  --     buildFont objId stdFont =
+  --       PdfFont
+  --       { pdfFontObjId = objId
+  --       , pdfFontBaseFont = pdfStandardFontBaseFont stdFont
+  --       , pdfFontSubtype = pdfStandardFontSubtype stdFont
+  --       , pdfFontEncoding = pdfStandardFontEncoding stdFont
+  --       }
+
+  execute ActionPage pdfDoc =
     pdfDoc
-    { pdfDocumentNextObjId = succ $ pdfDocumentNextObjId pdfDoc
+    { pdfDocumentNextObjId = nextObjId
     , pdfDocumentPages =
       (pdfDocumentPages pdfDoc)
       { pdfPagesKids =
           (pdfPagesKids $ pdfDocumentPages pdfDoc)
           ++
           [ PdfPage
-            { pdfPageObjId = pdfDocumentNextObjId pdfDoc
+            { pdfPageObjId = pageObjId
             , pdfPageSize = sizeA4
             , pdfPageMargins = defaultPageMargins
             , pdfPageLayout = Portrait
-            , pdfPageResources = Nothing
+            , pdfPageResources =
+              PdfResources
+              { pdfResourcesObjId = resourcesObjId
+              , pdfResourcesFonts = []
+              }
             }
           ]
       }
@@ -671,6 +689,10 @@ instance IsExecutableAction Action where
       { pdfTrailerSize = succ $ pdfTrailerSize (pdfDocumentTrailer pdfDoc)
       }
     }
+    where
+      pageObjId = pdfDocumentNextObjId pdfDoc
+      resourcesObjId = pdfDocumentNextObjId pdfDoc + 1
+      nextObjId = pdfDocumentNextObjId pdfDoc + 2
 
   execute (ActionPageSetSize size) pdfDoc =
     pdfDoc
@@ -757,9 +779,34 @@ instance IsExecutableAction Action where
     where
       (pdfPages, initPages, lastPage) = pdfPagesTuple pdfDoc
 
-  execute (ActionResources) pdfDoc =
+  -- execute ActionResources pdfDoc =
+  --   pdfDoc
+  --   { pdfDocumentNextObjId = succ $ pdfDocumentNextObjId pdfDoc
+  --   , pdfDocumentPages =
+  --     pdfPages
+  --     { pdfPagesKids =
+  --       initPages
+  --       ++
+  --       [ lastPage
+  --         { pdfPageResources =
+  --             Just $ PdfResources
+  --             { pdfResourcesObjId = pdfDocumentNextObjId pdfDoc
+  --             , pdfResourcesFonts = []
+  --             }
+  --         }
+  --       ]
+  --     }
+  --   , pdfDocumentTrailer =
+  --     (pdfDocumentTrailer pdfDoc)
+  --     { pdfTrailerSize = succ $ pdfTrailerSize (pdfDocumentTrailer pdfDoc)
+  --     }
+  --   }
+  --   where
+  --     (pdfPages, initPages, lastPage) = pdfPagesTuple pdfDoc
+
+  execute (ActionText t x y) pdfDoc =
     pdfDoc
-    { pdfDocumentNextObjId = succ $ pdfDocumentNextObjId pdfDoc
+    { pdfDocumentNextObjId = nextObjId
     , pdfDocumentPages =
       pdfPages
       { pdfPagesKids =
@@ -767,9 +814,11 @@ instance IsExecutableAction Action where
         ++
         [ lastPage
           { pdfPageResources =
-              Just $ PdfResources
-              { pdfResourcesObjId = pdfDocumentNextObjId pdfDoc
-              , pdfResourcesFonts = []
+              (pdfPageResources lastPage)
+              { pdfResourcesFonts =
+                pageFonts lastPage
+                ++
+                [ buildFont fontObjId $ pdfDocumentStandardFont pdfDoc ]
               }
           }
         ]
@@ -781,3 +830,13 @@ instance IsExecutableAction Action where
     }
     where
       (pdfPages, initPages, lastPage) = pdfPagesTuple pdfDoc
+      pageFonts page = pdfResourcesFonts $ pdfPageResources page
+      buildFont objId stdFont =
+        PdfFont
+        { pdfFontObjId = objId
+        , pdfFontBaseFont = pdfStandardFontBaseFont stdFont
+        , pdfFontSubtype = pdfStandardFontSubtype stdFont
+        , pdfFontEncoding = pdfStandardFontEncoding stdFont
+        }
+      fontObjId = pdfDocumentNextObjId pdfDoc
+      nextObjId = pdfDocumentNextObjId pdfDoc + 1
