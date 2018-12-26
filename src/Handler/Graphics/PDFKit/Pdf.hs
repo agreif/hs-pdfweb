@@ -212,10 +212,11 @@ instance ToByteStringLines PdfResources where
     , encodeUtf8 "<<"
     , encodeUtf8 $ "/ProcSet [/PDF /Text /ImageB /ImageC /ImageI]"
     ]
-    ++ ( L.map (\ fontObjId -> encodeUtf8 $
-                 "/Font << /F-------- " ++ (ref fontObjId) ++ " >>"
-               ) $ pdfResourcesFontObjIds pdfResources
-       )
+    ++
+    ( L.map (\ fontObjId ->
+               encodeUtf8 $ "/Font << /F1 " ++ (ref fontObjId) ++ " >>"
+            ) $ pdfResourcesFontObjIds pdfResources
+    )
     ++
     [ encodeUtf8 ">>"
     , encodeUtf8 "endobj"
@@ -229,6 +230,7 @@ data PdfPage = PdfPage
   , pdfPageMargins :: PdfPageMargins
   , pdfPageLayout :: PdfPageLayout
   , pdfPageResources :: PdfResources
+  , pdfPageContents :: PdfContents
   }
 
 instance ToJSON PdfPage where
@@ -254,11 +256,70 @@ instance ToByteStringLines PdfPage where
       ++ (doubleToText $ pdfPageSizeWidth pageSize) ++ " "
       ++ (doubleToText $ pdfPageSizeHeight pageSize) ++ "]"
     , encodeUtf8 $ "/Resources " ++ (ref $ pdfResourcesObjId $ pdfPageResources pdfPage)
+    , encodeUtf8 $ "/Contents " ++ (ref $ pdfContentsObjId $ pdfPageContents pdfPage)
     , encodeUtf8 ">>"
     , encodeUtf8 "endobj"
     ]
     where
       pageSize = applyLayout (pdfPageSize pdfPage) (pdfPageLayout pdfPage)
+
+-----------------------------------------------
+
+data PdfContents = PdfContents
+  { pdfContentsObjId :: Int
+  , pdfContentsTexts :: [PdfText]
+  }
+
+instance ToJSON PdfContents where
+  toJSON o = object
+    [ "objId" .= pdfContentsObjId o
+    , "texts" .= pdfContentsTexts o
+    ]
+
+instance ToByteStringLines PdfContents where
+  toByteStringLines pdfContents _ =
+    [ encodeUtf8 $ (pack $ show $ pdfContentsObjId pdfContents) ++ " 0 obj"
+    , encodeUtf8 $ "% ------------------------------------------------------ Contents " ++ (intToText $ pdfContentsObjId pdfContents)
+    , encodeUtf8 "<<"
+    , encodeUtf8 $ "/Length " ++ intToText streamLength
+    , encodeUtf8 ">>"
+    , encodeUtf8 "stream"
+    ]
+    ++
+    ( map encodeUtf8 streamLines )
+    ++
+    [ encodeUtf8 "endstream"
+    ]
+    where
+      streamLines :: [Text]
+      streamLines =
+        L.foldl
+        (\acc pdfText -> acc
+                         ++
+                         [ "BT"
+                         , "/F1 24 Tf"
+                         , (doubleToText $ pdfTextX pdfText) ++ " " ++ (doubleToText $ pdfTextY pdfText) ++ " Td"
+                         , "(" ++ (pdfTextText pdfText) ++ ") Tj"
+                         , "ET"
+                         ]
+        ) [] $ pdfContentsTexts pdfContents
+      streamLength :: Int
+      streamLength = length $ encodeUtf8 $ unlines streamLines
+
+-----------------------------------------------
+
+data PdfText = PdfText
+  { pdfTextText :: Text
+  , pdfTextX :: Double
+  , pdfTextY :: Double
+  }
+
+instance ToJSON PdfText where
+  toJSON o = object
+    [ "text" .= pdfTextText o
+    , "x" .= pdfTextX o
+    , "y" .= pdfTextY o
+    ]
 
 -----------------------------------------------
 
@@ -555,9 +616,11 @@ pdfDocumentByteStringLineBlocks pdfDoc =
     ++
     ( L.foldl
       (\acc pdfPage ->
-         (toByteStringLines pdfPage pdfDoc)
-         :(toByteStringLines (pdfPageResources pdfPage) pdfDoc)
-         :acc
+          [ toByteStringLines pdfPage pdfDoc
+          , toByteStringLines (pdfPageResources pdfPage) pdfDoc
+          , toByteStringLines (pdfPageContents pdfPage) pdfDoc
+          ]
+          ++ acc
       )
       []
       (pdfPagesKids $ pdfDocumentPages pdfDoc)
@@ -678,10 +741,15 @@ instance IsExecutableAction Action where
               , pdfPageMargins = defaultPageMargins
               , pdfPageLayout = Portrait
               , pdfPageResources =
-                PdfResources
-                { pdfResourcesObjId = resourcesObjId
-                , pdfResourcesFontObjIds = []
-                }
+                  PdfResources
+                  { pdfResourcesObjId = resourcesObjId
+                  , pdfResourcesFontObjIds = []
+                  }
+              , pdfPageContents =
+                  PdfContents
+                  { pdfContentsObjId = contentsObjId
+                  , pdfContentsTexts = []
+                  }
               }
             ]
         }
@@ -689,7 +757,8 @@ instance IsExecutableAction Action where
     where
       pageObjId = pdfDocumentNextObjId pdfDoc
       resourcesObjId = pdfDocumentNextObjId pdfDoc + 1
-      nextObjId = pdfDocumentNextObjId pdfDoc + 2
+      contentsObjId = pdfDocumentNextObjId pdfDoc + 2
+      nextObjId = pdfDocumentNextObjId pdfDoc + 3
 
   execute (ActionPageSetSize size) pdfDoc =
     pdfDoc
@@ -775,6 +844,16 @@ instance IsExecutableAction Action where
             { pdfPageResources =
                 (pdfPageResources lastPage)
                 { pdfResourcesFontObjIds = pageFontObjIds lastPage ++ [fontObjId] }
+            , pdfPageContents =
+                (pdfPageContents lastPage)
+                { pdfContentsTexts = (pdfContentsTexts $ pdfPageContents lastPage) ++
+                  [ PdfText
+                    { pdfTextText = t
+                    , pdfTextX = x
+                    , pdfTextY = y
+                    }
+                  ]
+                }
             }
           ]
         }
@@ -794,4 +873,5 @@ instance IsExecutableAction Action where
         , pdfFontEncoding = pdfStandardFontEncoding stdFont
         }
       fontObjId = pdfDocumentNextObjId pdfDoc
-      nextObjId = pdfDocumentNextObjId pdfDoc + 1
+      textObjId = pdfDocumentNextObjId pdfDoc + 1
+      nextObjId = pdfDocumentNextObjId pdfDoc + 2
