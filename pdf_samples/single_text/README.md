@@ -16,7 +16,7 @@ stream.on('finish', function() {
 });
 ```
 
-## compressed
+## uncompressed
 
 ```javascript
 // create a document and pipe to a blob
