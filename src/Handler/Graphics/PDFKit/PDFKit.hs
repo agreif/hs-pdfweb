@@ -20,9 +20,7 @@ font :: PdfStandardFont -> PdfBuilder
 font = build . ActionFont
 
 page :: PdfBuilder
-page = do
-  build ActionPage
-  build ActionResources
+page = build ActionPage
 
 pageSize :: PdfPageSize -> PdfBuilder
 pageSize = build . ActionPageSetSize
@@ -38,6 +36,9 @@ pageMargin = build . ActionPageSetMargin
 
 pageMargins :: Double -> Double -> Double -> Double -> PdfBuilder
 pageMargins t l b r = build $ ActionPageSetMargins t l b r
+
+text :: Text -> Double -> Double -> PdfBuilder
+text t x y = build $ ActionText t x y
 
 -----------------------------------------------
 
