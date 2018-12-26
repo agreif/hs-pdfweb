@@ -68,13 +68,10 @@ initialPdfDocument creationDate =
       }
   , pdfDocumentStandardFont = fontHelvetica
   , pdfDocumentFonts = []
-  , pdfDocumentXref =
-      PdfXref
-      { pdfXrefPositions = []
-      }
+  , pdfDocumentXref = PdfXref { pdfXrefPositions = [] }
   , pdfDocumentTrailer =
       PdfTrailer
-      { pdfTrailerSize = pred nextObjId
+      { pdfTrailerSize = Nothing
       , pdfTrailerInfo = Nothing
       }
   , pdfDocumentStartXref = Nothing
@@ -278,7 +275,10 @@ instance ToByteStringLines PdfXref where
   toByteStringLines pdfXref pdfDoc =
     [ encodeUtf8 "xref"
     , encodeUtf8 "% ------------------------------------------------------ xref"
-    , encodeUtf8 $ "0 " ++ (intToText $ 1 + (pdfTrailerSize $ pdfDocumentTrailer pdfDoc))
+    , encodeUtf8 $ "0 " ++ ( case pdfTrailerSize $ pdfDocumentTrailer pdfDoc of
+                               Just size -> intToText $ 1 + size
+                               _ -> ""
+                           )
     , encodeUtf8 $ "0000000000 65535 f"
     ]
     ++
@@ -287,7 +287,7 @@ instance ToByteStringLines PdfXref where
 -----------------------------------------------
 
 data PdfTrailer = PdfTrailer
-  { pdfTrailerSize :: Int
+  { pdfTrailerSize :: Maybe Int
   , pdfTrailerInfo :: Maybe Text
   }
 
@@ -302,7 +302,7 @@ instance ToByteStringLines PdfTrailer where
     [ encodeUtf8 "trailer"
     , encodeUtf8 "% ------------------------------------------------------ trailer"
     , encodeUtf8 "<<"
-    , encodeUtf8 $ "/Size " ++ (intToText $ pdfTrailerSize pdfTrailer)
+    , encodeUtf8 $ "/Size " ++ (maybeIntToText $ pdfTrailerSize pdfTrailer)
     , encodeUtf8 $ "/Root " ++ (ref $ pdfRootObjId $ pdfDocumentRoot pdfDoc)
     , encodeUtf8 $ "/Info " ++ (maybeTextToText $ pdfTrailerInfo pdfTrailer)
     , encodeUtf8 ">>"
@@ -541,8 +541,10 @@ applyLayout (PdfPageSize {pdfPageSizeWidth = w, pdfPageSizeHeight = h }) Landsca
 
 pdfDocumentByteStringLineBlocks :: PdfDocument -> ([ByteString], [[ByteString]], [ByteString])
 pdfDocumentByteStringLineBlocks pdfDoc =
-  ( pdfDocumentHeaderLines pdfDoc
-  , [
+  ( -- header lines
+    pdfDocumentHeaderLines pdfDoc
+  , -- referencable line-blocks
+    [
       ( toByteStringLines (pdfDocumentRoot pdfDoc) pdfDoc )
     , ( toByteStringLines (pdfDocumentPages pdfDoc) pdfDoc )
     , ( case pdfDocumentInfo pdfDoc of
@@ -551,16 +553,19 @@ pdfDocumentByteStringLineBlocks pdfDoc =
        )
     ]
     ++
-    ( L.map (\pdfPage ->
-                (toByteStringLines pdfPage pdfDoc)
-                ++
-                (toByteStringLines (pdfPageResources pdfPage) pdfDoc)
-            )
-      $ pdfPagesKids $ pdfDocumentPages pdfDoc
+    ( L.foldl
+      (\acc pdfPage ->
+         (toByteStringLines pdfPage pdfDoc)
+         :(toByteStringLines (pdfPageResources pdfPage) pdfDoc)
+         :acc
+      )
+      []
+      (pdfPagesKids $ pdfDocumentPages pdfDoc)
     )
     ++
     ( L.map (\pdfFont -> toByteStringLines pdfFont pdfDoc) $ pdfDocumentFonts pdfDoc )
-  , ( toByteStringLines (pdfDocumentXref pdfDoc) pdfDoc )
+  , -- footer lines
+    ( toByteStringLines (pdfDocumentXref pdfDoc) pdfDoc )
     ++ ( toByteStringLines (pdfDocumentTrailer pdfDoc) pdfDoc )
     ++ [ encodeUtf8 "startxref"
        , encodeUtf8 $ maybeIntToText $ pdfDocumentStartXref pdfDoc
@@ -602,13 +607,9 @@ instance IsExecutableAction Action where
         , pdfInfoCreationDate = "D:" ++ pdfDocumentCreationDate pdfDoc ++ "Z"
         }
     , pdfDocumentTrailer =
-        (pdfDocumentTrailer pdfDoc)
-        { pdfTrailerSize = trailerSize + 1
-        , pdfTrailerInfo = Just $ ref infoObjId
-        }
+        (pdfDocumentTrailer pdfDoc) { pdfTrailerInfo = Just $ ref infoObjId }
     }
     where
-      trailerSize = pdfTrailerSize $ pdfDocumentTrailer pdfDoc
       infoObjId = pdfDocumentNextObjId pdfDoc
       nextObjId = pdfDocumentNextObjId pdfDoc + 1
 
@@ -628,9 +629,10 @@ instance IsExecutableAction Action where
 
   execute ActionFinalize pdfDoc =
     pdfDoc
-    { pdfDocumentXref =
-        PdfXref { pdfXrefPositions = L.init positions }
+    { pdfDocumentXref = PdfXref { pdfXrefPositions = L.init positions }
     , pdfDocumentStartXref = Just $ L.last positions
+    , pdfDocumentTrailer =
+        (pdfDocumentTrailer pdfDoc) { pdfTrailerSize = Just $ pdfDocumentNextObjId pdfDoc - 1 }
     }
     where
       (headerLines, objectBlocks, _) = pdfDocumentByteStringLineBlocks pdfDoc
@@ -683,11 +685,8 @@ instance IsExecutableAction Action where
               }
             ]
         }
-    , pdfDocumentTrailer =
-        (pdfDocumentTrailer pdfDoc) { pdfTrailerSize = trailerSize + 2 }
     }
     where
-      trailerSize = pdfTrailerSize $ pdfDocumentTrailer pdfDoc
       pageObjId = pdfDocumentNextObjId pdfDoc
       resourcesObjId = pdfDocumentNextObjId pdfDoc + 1
       nextObjId = pdfDocumentNextObjId pdfDoc + 2
@@ -764,31 +763,6 @@ instance IsExecutableAction Action where
     where
       (pdfPages, initPages, lastPage) = pdfPagesTuple pdfDoc
 
-  -- execute ActionResources pdfDoc =
-  --   pdfDoc
-  --   { pdfDocumentNextObjId = succ $ pdfDocumentNextObjId pdfDoc
-  --   , pdfDocumentPages =
-  --     pdfPages
-  --     { pdfPagesKids =
-  --       initPages
-  --       ++
-  --       [ lastPage
-  --         { pdfPageResources =
-  --             Just $ PdfResources
-  --             { pdfResourcesObjId = pdfDocumentNextObjId pdfDoc
-  --             , pdfResourcesFonts = []
-  --             }
-  --         }
-  --       ]
-  --     }
-  --   , pdfDocumentTrailer =
-  --     (pdfDocumentTrailer pdfDoc)
-  --     { pdfTrailerSize = succ $ pdfTrailerSize (pdfDocumentTrailer pdfDoc)
-  --     }
-  --   }
-  --   where
-  --     (pdfPages, initPages, lastPage) = pdfPagesTuple pdfDoc
-
   execute (ActionText t x y) pdfDoc =
     pdfDoc
     { pdfDocumentNextObjId = nextObjId
@@ -808,11 +782,8 @@ instance IsExecutableAction Action where
         (pdfDocumentFonts pdfDoc)
         ++
         [ buildFont fontObjId $ pdfDocumentStandardFont pdfDoc ]
-    , pdfDocumentTrailer =
-        (pdfDocumentTrailer pdfDoc) { pdfTrailerSize = trailerSize + 1 }
     }
     where
-      trailerSize = pdfTrailerSize $ pdfDocumentTrailer pdfDoc
       (pdfPages, initPages, lastPage) = pdfPagesTuple pdfDoc
       pageFontObjIds = pdfResourcesFontObjIds . pdfPageResources
       buildFont objId stdFont =
