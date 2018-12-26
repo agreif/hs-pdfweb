@@ -22,6 +22,28 @@ data PdfDocument = PdfDocument
   , pdfDocumentStartXref :: Maybe Int
   }
 
+instance ToJSON PdfDocument where
+  toJSON o = object
+    [ "version" .= pdfDocumentVersion o
+    , "nextObjId" .= pdfDocumentNextObjId o
+    , "info" .= pdfDocumentInfo o
+    , "root" .= pdfDocumentRoot o
+    , "pages" .= pdfDocumentPages o
+    , "font" .= pdfDocumentFont o
+    , "trailer" .= pdfDocumentTrailer o
+    , "xref" .= pdfDocumentXref o
+    , "startxref" .= pdfDocumentStartXref o
+    ]
+
+instance ToByteStringLines PdfDocument where
+  toByteStringLines pdfDoc _ =
+    headerLines
+    ++ L.foldl (\acc x -> acc ++ x) [] objectBlocks
+    ++ footerLines
+    where
+      (headerLines, objectBlocks, footerLines) =
+        pdfDocumentByteStringLineBlocks pdfDoc
+
 initialPdfDocument :: Text -> PdfDocument
 initialPdfDocument creationDate =
   PdfDocument
@@ -60,28 +82,6 @@ initialPdfDocument creationDate =
     pagesObjId = 2
     nextObjId = 3
 
-instance ToByteStringLines PdfDocument where
-  toByteStringLines pdfDoc _ =
-    headerLines
-    ++ L.foldl (\acc x -> acc ++ x) [] objectBlocks
-    ++ footerLines
-    where
-      (headerLines, objectBlocks, footerLines) =
-        pdfDocumentByteStringLineBlocks pdfDoc
-
-instance ToJSON PdfDocument where
-  toJSON o = object
-    [ "version" .= pdfDocumentVersion o
-    , "nextObjId" .= pdfDocumentNextObjId o
-    , "info" .= pdfDocumentInfo o
-    , "root" .= pdfDocumentRoot o
-    , "pages" .= pdfDocumentPages o
-    , "font" .= pdfDocumentFont o
-    , "trailer" .= pdfDocumentTrailer o
-    , "xref" .= pdfDocumentXref o
-    , "startxref" .= pdfDocumentStartXref o
-    ]
-
 -----------------------------------------------
 
 data PdfInfo = PdfInfo
@@ -90,6 +90,14 @@ data PdfInfo = PdfInfo
   , pdfInfoCreator :: Text
   , pdfInfoCreationDate :: Text
   }
+
+instance ToJSON PdfInfo where
+  toJSON o = object
+    [ "objId" .= pdfInfoObjId o
+    , "producer" .= pdfInfoProducer o
+    , "creator" .= pdfInfoCreator o
+    , "creationDate" .= pdfInfoCreationDate o
+    ]
 
 instance ToByteStringLines PdfInfo where
   toByteStringLines pdfInfo _ =
@@ -103,20 +111,18 @@ instance ToByteStringLines PdfInfo where
     , encodeUtf8 "endobj"
     ]
 
-instance ToJSON PdfInfo where
-  toJSON o = object
-    [ "objId" .= pdfInfoObjId o
-    , "producer" .= pdfInfoProducer o
-    , "creator" .= pdfInfoCreator o
-    , "creationDate" .= pdfInfoCreationDate o
-    ]
-
 -----------------------------------------------
 
 data PdfRoot = PdfRoot
   { pdfRootObjId :: Int
   , pdfRootPages :: Text
   }
+
+instance ToJSON PdfRoot where
+  toJSON o = object
+    [ "objId" .= pdfRootObjId o
+    , "pages" .= pdfRootPages o
+    ]
 
 instance ToByteStringLines PdfRoot where
   toByteStringLines pdfRoot pdfDoc =
@@ -129,18 +135,18 @@ instance ToByteStringLines PdfRoot where
     , encodeUtf8 "endobj"
     ]
 
-instance ToJSON PdfRoot where
-  toJSON o = object
-    [ "objId" .= pdfRootObjId o
-    , "pages" .= pdfRootPages o
-    ]
-
 -----------------------------------------------
 
 data PdfPages = PdfPages
   { pdfPagesObjId :: Int
   , pdfPagesKids :: [PdfPage]
   }
+
+instance ToJSON PdfPages where
+  toJSON o = object
+    [ "objId" .= pdfPagesObjId o
+    , "kids" .= pdfPagesKids o
+    ]
 
 instance ToByteStringLines PdfPages where
   toByteStringLines pdfPages _ =
@@ -156,17 +162,16 @@ instance ToByteStringLines PdfPages where
     , encodeUtf8 "endobj"
     ]
 
-instance ToJSON PdfPages where
-  toJSON o = object
-    [ "objId" .= pdfPagesObjId o
-    , "kids" .= pdfPagesKids o
-    ]
-
 -----------------------------------------------
 
 data PdfFont = PdfFont
   { pdfFontObjId :: Int
   }
+
+instance ToJSON PdfFont where
+  toJSON o = object
+    [ "objId" .= pdfFontObjId o
+    ]
 
 instance ToByteStringLines PdfFont where
   toByteStringLines pdfFont _ =
@@ -181,16 +186,16 @@ instance ToByteStringLines PdfFont where
     , encodeUtf8 "endobj"
     ]
 
-instance ToJSON PdfFont where
-  toJSON o = object
-    [ "objId" .= pdfFontObjId o
-    ]
-
 -----------------------------------------------
 
 data PdfResources = PdfResources
   { pdfResourcesObjId :: Int
   }
+
+instance ToJSON PdfResources where
+  toJSON o = object
+    [ "objId" .= pdfResourcesObjId o
+    ]
 
 instance ToByteStringLines PdfResources where
   toByteStringLines pdfResources pdfDoc =
@@ -207,11 +212,6 @@ instance ToByteStringLines PdfResources where
     , encodeUtf8 "endobj"
     ]
 
-instance ToJSON PdfResources where
-  toJSON o = object
-    [ "objId" .= pdfResourcesObjId o
-    ]
-
 -----------------------------------------------
 
 data PdfPage = PdfPage
@@ -221,6 +221,17 @@ data PdfPage = PdfPage
   , pdfPageLayout :: PdfPageLayout
   , pdfPageResources :: Maybe PdfResources
   }
+
+instance ToJSON PdfPage where
+  toJSON o = object
+    [ "objId" .= pdfPageObjId o
+    , "size" .= pdfPageSize o
+    , "margins" .= pdfPageMargins o
+    , "layout" .= ( T.pack $ case pdfPageLayout o of
+                               Portrait -> "portrait"
+                               Landscape -> "landscape" )
+    , "resources" .= pdfPageResources o
+    ]
 
 instance ToByteStringLines PdfPage where
   toByteStringLines pdfPage pdfDoc =
@@ -243,22 +254,16 @@ instance ToByteStringLines PdfPage where
     where
       pageSize = applyLayout (pdfPageSize pdfPage) (pdfPageLayout pdfPage)
 
-instance ToJSON PdfPage where
-  toJSON o = object
-    [ "objId" .= pdfPageObjId o
-    , "size" .= pdfPageSize o
-    , "margins" .= pdfPageMargins o
-    , "layout" .= ( T.pack $ case pdfPageLayout o of
-                               Portrait -> "portrait"
-                               Landscape -> "landscape" )
-    , "resources" .= pdfPageResources o
-    ]
-
 -----------------------------------------------
 
 data PdfXref = PdfXref
   { pdfXrefPositions :: [Int]
   }
+
+instance ToJSON PdfXref where
+  toJSON o = object
+    [ "positions" .= pdfXrefPositions o
+    ]
 
 instance ToByteStringLines PdfXref where
   toByteStringLines pdfXref pdfDoc =
@@ -270,17 +275,18 @@ instance ToByteStringLines PdfXref where
     ++
     (L.map (\pos -> encodeUtf8 $ (formatXrefPos pos) ++ " 00000 n") $ pdfXrefPositions pdfXref)
 
-instance ToJSON PdfXref where
-  toJSON o = object
-    [ "positions" .= pdfXrefPositions o
-    ]
-
 -----------------------------------------------
 
 data PdfTrailer = PdfTrailer
   { pdfTrailerSize :: Int
   , pdfTrailerInfo :: Maybe Text
   }
+
+instance ToJSON PdfTrailer where
+  toJSON o = object
+    [ "size" .= pdfTrailerSize o
+    , "info" .= pdfTrailerInfo o
+    ]
 
 instance ToByteStringLines PdfTrailer where
   toByteStringLines pdfTrailer pdfDoc =
@@ -293,12 +299,6 @@ instance ToByteStringLines PdfTrailer where
     , encodeUtf8 ">>"
     ]
 
-instance ToJSON PdfTrailer where
-  toJSON o = object
-    [ "size" .= pdfTrailerSize o
-    , "info" .= pdfTrailerInfo o
-    ]
-
 -----------------------------------------------
 
 data PdfPageMargins =
@@ -309,9 +309,6 @@ data PdfPageMargins =
   , pdfPageMarginRight :: Double
   }
 
-defaultPageMargins :: PdfPageMargins
-defaultPageMargins = PdfPageMargins 72 72 72 72
-
 instance ToJSON PdfPageMargins where
   toJSON o = object
     [ "top" .= pdfPageMarginTop o
@@ -319,6 +316,9 @@ instance ToJSON PdfPageMargins where
     , "bottom" .= pdfPageMarginBottom o
     , "right" .= pdfPageMarginRight o
     ]
+
+defaultPageMargins :: PdfPageMargins
+defaultPageMargins = PdfPageMargins 72 72 72 72
 
 -----------------------------------------------
 
@@ -343,78 +343,6 @@ instance ToJSON PdfPageSize where
     [ "width" .= pdfPageSizeWidth o
     , "height" .= pdfPageSizeHeight o
     ]
-
------------------------------------------------
-
-class ToByteStringLines b where
-  toByteStringLines :: b -> PdfDocument -> [ByteString]
-
-class IsExecutableAction a where
-  execute :: a -> PdfDocument -> PdfDocument
-
-data PdfBuilderM b = PdfBuilderM b [Action]
-
-type PdfBuilder = PdfBuilderM ()
-
-instance Functor PdfBuilderM where
-  fmap = liftM
-
-instance Applicative PdfBuilderM where
-  pure  = return
-  (<*>) = ap
-
-instance Monad PdfBuilderM where
-  return b = PdfBuilderM b []
-  PdfBuilderM b actions1 >>= f =
-    let PdfBuilderM b2 actions2 = f b
-    in  PdfBuilderM b2 (actions1 ++ actions2)
-
------------------------------------------------
-
-pdfPagesTuple :: PdfDocument -> (PdfPages, [PdfPage], PdfPage)
-pdfPagesTuple pdfDoc = (pdfPages, initPages, lastPage)
-  where
-    pdfPages = pdfDocumentPages pdfDoc
-    initPages = L.init $ pdfPagesKids pdfPages
-    lastPage = L.last $ pdfPagesKids pdfPages
-
-applyLayout :: PdfPageSize -> PdfPageLayout -> PdfPageSize
-applyLayout size Portrait = size
-applyLayout (PdfPageSize {pdfPageSizeWidth = w, pdfPageSizeHeight = h }) Landscape =
-  PdfPageSize { pdfPageSizeWidth = h
-              , pdfPageSizeHeight = w
-              }
-
-pdfDocumentByteStringLineBlocks :: PdfDocument -> ([ByteString], [[ByteString]], [ByteString])
-pdfDocumentByteStringLineBlocks pdfDoc =
-  ( pdfDocumentHeaderLines pdfDoc
-  , [
-      ( toByteStringLines (pdfDocumentRoot pdfDoc) pdfDoc )
-    , ( toByteStringLines (pdfDocumentPages pdfDoc) pdfDoc )
-    , ( case pdfDocumentInfo pdfDoc of
-           Just pdfInfo -> toByteStringLines pdfInfo pdfDoc
-           _ -> []
-       )
-    , ( case pdfDocumentFont pdfDoc of
-           Just pdfFont -> toByteStringLines pdfFont pdfDoc
-           _ -> []
-       )
-    ]
-    ++ ( L.map (\pdfPage ->
-                  toByteStringLines pdfPage pdfDoc
-                  ++ case pdfPageResources pdfPage of
-                       Just pdfResources -> toByteStringLines pdfResources pdfDoc
-                       _ -> []
-               )
-         (pdfPagesKids $ pdfDocumentPages pdfDoc)
-       )
-  , ( toByteStringLines (pdfDocumentXref pdfDoc) pdfDoc )
-    ++ ( toByteStringLines (pdfDocumentTrailer pdfDoc) pdfDoc )
-    ++ [ encodeUtf8 "startxref"
-       , encodeUtf8 $ maybeIntToText $ pdfDocumentStartXref pdfDoc
-       , encodeUtf8 "%%EOF"
-       ]
-  )
 
 size4A0 :: PdfPageSize
 size4A0 = PdfPageSize 4767.87 6740.79
@@ -516,6 +444,78 @@ sizeLETTER :: PdfPageSize
 sizeLETTER = PdfPageSize 612.00 792.00
 sizeTABLOID :: PdfPageSize
 sizeTABLOID = PdfPageSize 792.00 1224.00
+
+-----------------------------------------------
+
+class ToByteStringLines b where
+  toByteStringLines :: b -> PdfDocument -> [ByteString]
+
+class IsExecutableAction a where
+  execute :: a -> PdfDocument -> PdfDocument
+
+data PdfBuilderM b = PdfBuilderM b [Action]
+
+type PdfBuilder = PdfBuilderM ()
+
+instance Functor PdfBuilderM where
+  fmap = liftM
+
+instance Applicative PdfBuilderM where
+  pure  = return
+  (<*>) = ap
+
+instance Monad PdfBuilderM where
+  return b = PdfBuilderM b []
+  PdfBuilderM b actions1 >>= f =
+    let PdfBuilderM b2 actions2 = f b
+    in  PdfBuilderM b2 (actions1 ++ actions2)
+
+-----------------------------------------------
+
+pdfPagesTuple :: PdfDocument -> (PdfPages, [PdfPage], PdfPage)
+pdfPagesTuple pdfDoc = (pdfPages, initPages, lastPage)
+  where
+    pdfPages = pdfDocumentPages pdfDoc
+    initPages = L.init $ pdfPagesKids pdfPages
+    lastPage = L.last $ pdfPagesKids pdfPages
+
+applyLayout :: PdfPageSize -> PdfPageLayout -> PdfPageSize
+applyLayout size Portrait = size
+applyLayout (PdfPageSize {pdfPageSizeWidth = w, pdfPageSizeHeight = h }) Landscape =
+  PdfPageSize { pdfPageSizeWidth = h
+              , pdfPageSizeHeight = w
+              }
+
+pdfDocumentByteStringLineBlocks :: PdfDocument -> ([ByteString], [[ByteString]], [ByteString])
+pdfDocumentByteStringLineBlocks pdfDoc =
+  ( pdfDocumentHeaderLines pdfDoc
+  , [
+      ( toByteStringLines (pdfDocumentRoot pdfDoc) pdfDoc )
+    , ( toByteStringLines (pdfDocumentPages pdfDoc) pdfDoc )
+    , ( case pdfDocumentInfo pdfDoc of
+           Just pdfInfo -> toByteStringLines pdfInfo pdfDoc
+           _ -> []
+       )
+    , ( case pdfDocumentFont pdfDoc of
+           Just pdfFont -> toByteStringLines pdfFont pdfDoc
+           _ -> []
+       )
+    ]
+    ++ ( L.map (\pdfPage ->
+                  toByteStringLines pdfPage pdfDoc
+                  ++ case pdfPageResources pdfPage of
+                       Just pdfResources -> toByteStringLines pdfResources pdfDoc
+                       _ -> []
+               )
+         (pdfPagesKids $ pdfDocumentPages pdfDoc)
+       )
+  , ( toByteStringLines (pdfDocumentXref pdfDoc) pdfDoc )
+    ++ ( toByteStringLines (pdfDocumentTrailer pdfDoc) pdfDoc )
+    ++ [ encodeUtf8 "startxref"
+       , encodeUtf8 $ maybeIntToText $ pdfDocumentStartXref pdfDoc
+       , encodeUtf8 "%%EOF"
+       ]
+  )
 
 -----------------------------------------------
 
