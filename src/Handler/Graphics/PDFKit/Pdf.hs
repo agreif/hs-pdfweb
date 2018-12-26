@@ -17,6 +17,7 @@ data PdfDocument = PdfDocument
   , pdfDocumentRoot :: PdfRoot
   , pdfDocumentPages :: PdfPages
   , pdfDocumentStandardFont :: PdfStandardFont
+  , pdfDocumentFonts :: [PdfFont]
   , pdfDocumentTrailer :: PdfTrailer
   , pdfDocumentXref :: PdfXref
   , pdfDocumentStartXref :: Maybe Int
@@ -30,6 +31,7 @@ instance ToJSON PdfDocument where
     , "root" .= pdfDocumentRoot o
     , "pages" .= pdfDocumentPages o
     , "standardFont" .= pdfDocumentStandardFont o
+    , "fonts" .= pdfDocumentFonts o
     , "trailer" .= pdfDocumentTrailer o
     , "xref" .= pdfDocumentXref o
     , "startxref" .= pdfDocumentStartXref o
@@ -65,6 +67,7 @@ initialPdfDocument creationDate =
       , pdfPagesKids = []
       }
   , pdfDocumentStandardFont = fontHelvetica
+  , pdfDocumentFonts = []
   , pdfDocumentXref =
       PdfXref
       { pdfXrefPositions = []
@@ -196,13 +199,13 @@ instance ToByteStringLines PdfFont where
 
 data PdfResources = PdfResources
   { pdfResourcesObjId :: Int
-  , pdfResourcesFonts :: [PdfFont]
+  , pdfResourcesFontObjIds :: [Int]
   }
 
 instance ToJSON PdfResources where
   toJSON o = object
     [ "objId" .= pdfResourcesObjId o
-    , "fonts" .= pdfResourcesFonts o
+    , "fontObjIds" .= pdfResourcesFontObjIds o
     ]
 
 instance ToByteStringLines PdfResources where
@@ -212,9 +215,9 @@ instance ToByteStringLines PdfResources where
     , encodeUtf8 "<<"
     , encodeUtf8 $ "/ProcSet [/PDF /Text /ImageB /ImageC /ImageI]"
     ]
-    ++ ( L.map (\ pdfFont -> encodeUtf8 $
-                 "/Font << /F-------- " ++ (ref $ pdfFontObjId pdfFont) ++ " >>"
-               ) $ pdfResourcesFonts pdfResources
+    ++ ( L.map (\ fontObjId -> encodeUtf8 $
+                 "/Font << /F-------- " ++ (ref fontObjId) ++ " >>"
+               ) $ pdfResourcesFontObjIds pdfResources
        )
     ++
     [ encodeUtf8 ">>"
@@ -546,10 +549,6 @@ pdfDocumentByteStringLineBlocks pdfDoc =
            Just pdfInfo -> toByteStringLines pdfInfo pdfDoc
            _ -> []
        )
-    -- , ( case pdfDocumentFont pdfDoc of
-    --        Just pdfFont -> toByteStringLines pdfFont pdfDoc
-    --        _ -> []
-    --    )
     ]
     ++
     ( L.map (\pdfPage ->
@@ -559,6 +558,8 @@ pdfDocumentByteStringLineBlocks pdfDoc =
             )
       $ pdfPagesKids $ pdfDocumentPages pdfDoc
     )
+    ++
+    ( L.map (\pdfFont -> toByteStringLines pdfFont pdfDoc) $ pdfDocumentFonts pdfDoc )
   , ( toByteStringLines (pdfDocumentXref pdfDoc) pdfDoc )
     ++ ( toByteStringLines (pdfDocumentTrailer pdfDoc) pdfDoc )
     ++ [ encodeUtf8 "startxref"
@@ -601,12 +602,13 @@ instance IsExecutableAction Action where
         , pdfInfoCreationDate = "D:" ++ pdfDocumentCreationDate pdfDoc ++ "Z"
         }
     , pdfDocumentTrailer =
-      (pdfDocumentTrailer pdfDoc)
-      { pdfTrailerSize = succ $ pdfTrailerSize (pdfDocumentTrailer pdfDoc)
-      , pdfTrailerInfo = Just $ ref infoObjId
-      }
+        (pdfDocumentTrailer pdfDoc)
+        { pdfTrailerSize = trailerSize + 1
+        , pdfTrailerInfo = Just $ ref infoObjId
+        }
     }
     where
+      trailerSize = pdfTrailerSize $ pdfDocumentTrailer pdfDoc
       infoObjId = pdfDocumentNextObjId pdfDoc
       nextObjId = pdfDocumentNextObjId pdfDoc + 1
 
@@ -627,8 +629,7 @@ instance IsExecutableAction Action where
   execute ActionFinalize pdfDoc =
     pdfDoc
     { pdfDocumentXref =
-      PdfXref
-      { pdfXrefPositions = L.init positions }
+        PdfXref { pdfXrefPositions = L.init positions }
     , pdfDocumentStartXref = Just $ L.last positions
     }
     where
@@ -639,9 +640,7 @@ instance IsExecutableAction Action where
       (positions, _) = L.foldl (\(ls,accl) len -> (ls ++ [accl+len], accl+len)) ([headerLength], headerLength) lengths
 
   execute (ActionFont standardFont) pdfDoc =
-    pdfDoc
-    { pdfDocumentStandardFont = standardFont
-    }
+    pdfDoc { pdfDocumentStandardFont = standardFont }
 
   -- execute (ActionFont standardFont) pdfDoc =
   --   pdfDoc
@@ -667,29 +666,28 @@ instance IsExecutableAction Action where
     pdfDoc
     { pdfDocumentNextObjId = nextObjId
     , pdfDocumentPages =
-      (pdfDocumentPages pdfDoc)
-      { pdfPagesKids =
-          (pdfPagesKids $ pdfDocumentPages pdfDoc)
-          ++
-          [ PdfPage
-            { pdfPageObjId = pageObjId
-            , pdfPageSize = sizeA4
-            , pdfPageMargins = defaultPageMargins
-            , pdfPageLayout = Portrait
-            , pdfPageResources =
-              PdfResources
-              { pdfResourcesObjId = resourcesObjId
-              , pdfResourcesFonts = []
+        (pdfDocumentPages pdfDoc)
+        { pdfPagesKids =
+            (pdfPagesKids $ pdfDocumentPages pdfDoc)
+            ++
+            [ PdfPage
+              { pdfPageObjId = pageObjId
+              , pdfPageSize = sizeA4
+              , pdfPageMargins = defaultPageMargins
+              , pdfPageLayout = Portrait
+              , pdfPageResources =
+                PdfResources
+                { pdfResourcesObjId = resourcesObjId
+                , pdfResourcesFontObjIds = []
+                }
               }
-            }
-          ]
-      }
+            ]
+        }
     , pdfDocumentTrailer =
-      (pdfDocumentTrailer pdfDoc)
-      { pdfTrailerSize = succ $ pdfTrailerSize (pdfDocumentTrailer pdfDoc)
-      }
+        (pdfDocumentTrailer pdfDoc) { pdfTrailerSize = trailerSize + 2 }
     }
     where
+      trailerSize = pdfTrailerSize $ pdfDocumentTrailer pdfDoc
       pageObjId = pdfDocumentNextObjId pdfDoc
       resourcesObjId = pdfDocumentNextObjId pdfDoc + 1
       nextObjId = pdfDocumentNextObjId pdfDoc + 2
@@ -697,15 +695,12 @@ instance IsExecutableAction Action where
   execute (ActionPageSetSize size) pdfDoc =
     pdfDoc
     { pdfDocumentPages =
-      pdfPages
-      { pdfPagesKids =
-        initPages
-        ++
-        [ lastPage
-          { pdfPageSize = size
-          }
-        ]
-      }
+        pdfPages
+        { pdfPagesKids =
+            initPages
+            ++
+            [ lastPage { pdfPageSize = size } ]
+        }
     }
     where
       (pdfPages, initPages, lastPage) = pdfPagesTuple pdfDoc
@@ -713,19 +708,19 @@ instance IsExecutableAction Action where
   execute (ActionPageSetSizeCustom width height) pdfDoc =
     pdfDoc
     { pdfDocumentPages =
-      pdfPages
-      { pdfPagesKids =
-        initPages
-        ++
-        [ lastPage
-          { pdfPageSize =
-            PdfPageSize
-            { pdfPageSizeWidth = width
-            , pdfPageSizeHeight = height
+        pdfPages
+        { pdfPagesKids =
+          initPages
+          ++
+          [ lastPage
+            { pdfPageSize =
+                PdfPageSize
+                { pdfPageSizeWidth = width
+                , pdfPageSizeHeight = height
+                }
             }
-          }
-        ]
-      }
+          ]
+        }
     }
     where
       (pdfPages, initPages, lastPage) = pdfPagesTuple pdfDoc
@@ -733,15 +728,12 @@ instance IsExecutableAction Action where
   execute (ActionPageSetLayout lay) pdfDoc =
     pdfDoc
     { pdfDocumentPages =
-      pdfPages
-      { pdfPagesKids =
-        initPages
-        ++
-        [ lastPage
-          { pdfPageLayout = lay
-          }
-        ]
-      }
+        pdfPages
+        { pdfPagesKids =
+          initPages
+          ++
+          [ lastPage { pdfPageLayout = lay } ]
+        }
     }
     where
       (pdfPages, initPages, lastPage) = pdfPagesTuple pdfDoc
@@ -749,15 +741,12 @@ instance IsExecutableAction Action where
   execute (ActionPageSetMargin x) pdfDoc =
     pdfDoc
     { pdfDocumentPages =
-      pdfPages
-      { pdfPagesKids =
-        initPages
-        ++
-        [ lastPage
-          { pdfPageMargins = PdfPageMargins x x x x
-          }
-        ]
-      }
+        pdfPages
+        { pdfPagesKids =
+          initPages
+          ++
+          [ lastPage { pdfPageMargins = PdfPageMargins x x x x } ]
+        }
     }
     where
       (pdfPages, initPages, lastPage) = pdfPagesTuple pdfDoc
@@ -765,16 +754,12 @@ instance IsExecutableAction Action where
   execute (ActionPageSetMargins top left bottom right) pdfDoc =
     pdfDoc
     { pdfDocumentPages =
-      pdfPages
-      { pdfPagesKids =
-        initPages
-        ++
-        [ lastPage
-          { pdfPageMargins =
-            PdfPageMargins top left bottom right
-          }
-        ]
-      }
+        pdfPages
+        { pdfPagesKids =
+          initPages
+          ++
+          [ lastPage { pdfPageMargins = PdfPageMargins top left bottom right } ]
+        }
     }
     where
       (pdfPages, initPages, lastPage) = pdfPagesTuple pdfDoc
@@ -808,29 +793,28 @@ instance IsExecutableAction Action where
     pdfDoc
     { pdfDocumentNextObjId = nextObjId
     , pdfDocumentPages =
-      pdfPages
-      { pdfPagesKids =
-        initPages
+        pdfPages
+        { pdfPagesKids =
+          initPages
+          ++
+          [ lastPage
+            { pdfPageResources =
+                (pdfPageResources lastPage)
+                { pdfResourcesFontObjIds = pageFontObjIds lastPage ++ [fontObjId] }
+            }
+          ]
+        }
+    , pdfDocumentFonts =
+        (pdfDocumentFonts pdfDoc)
         ++
-        [ lastPage
-          { pdfPageResources =
-              (pdfPageResources lastPage)
-              { pdfResourcesFonts =
-                pageFonts lastPage
-                ++
-                [ buildFont fontObjId $ pdfDocumentStandardFont pdfDoc ]
-              }
-          }
-        ]
-      }
+        [ buildFont fontObjId $ pdfDocumentStandardFont pdfDoc ]
     , pdfDocumentTrailer =
-      (pdfDocumentTrailer pdfDoc)
-      { pdfTrailerSize = succ $ pdfTrailerSize (pdfDocumentTrailer pdfDoc)
-      }
+        (pdfDocumentTrailer pdfDoc) { pdfTrailerSize = trailerSize + 1 }
     }
     where
+      trailerSize = pdfTrailerSize $ pdfDocumentTrailer pdfDoc
       (pdfPages, initPages, lastPage) = pdfPagesTuple pdfDoc
-      pageFonts page = pdfResourcesFonts $ pdfPageResources page
+      pageFontObjIds = pdfResourcesFontObjIds . pdfPageResources
       buildFont objId stdFont =
         PdfFont
         { pdfFontObjId = objId
