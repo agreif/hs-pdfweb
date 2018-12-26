@@ -873,5 +873,4 @@ instance IsExecutableAction Action where
         , pdfFontEncoding = pdfStandardFontEncoding stdFont
         }
       fontObjId = pdfDocumentNextObjId pdfDoc
-      textObjId = pdfDocumentNextObjId pdfDoc + 1
-      nextObjId = pdfDocumentNextObjId pdfDoc + 2
+      nextObjId = pdfDocumentNextObjId pdfDoc + 1
