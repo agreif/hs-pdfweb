@@ -166,17 +166,13 @@ instance ToByteStringLines PdfPages where
 
 data PdfFont = PdfFont
   { pdfFontObjId :: Int
-  , pdfFontBaseFont :: Text
-  , pdfFontSubtype :: Text
-  , pdfFontEncoding :: Text
+  , pdfFontStandardFont ::PdfStandardFont
   }
 
 instance ToJSON PdfFont where
   toJSON o = object
     [ "objId" .= pdfFontObjId o
-    , "baseFont" .= pdfFontBaseFont o
-    , "subtype" .= pdfFontSubtype o
-    , "encoding" .= pdfFontEncoding o
+    , "standardFont" .= pdfFontStandardFont o
     ]
 
 instance ToByteStringLines PdfFont where
@@ -185,12 +181,14 @@ instance ToByteStringLines PdfFont where
     , encodeUtf8 $ "% ------------------------------------------------------ Font " ++ (intToText $ pdfFontObjId pdfFont)
     , encodeUtf8 "<<"
     , encodeUtf8 $ "/Type /Font"
-    , encodeUtf8 $ "/BaseFont /" ++ pdfFontBaseFont pdfFont
-    , encodeUtf8 $ "/Subtype /"  ++ pdfFontSubtype pdfFont
-    , encodeUtf8 $ "/Encoding /" ++ pdfFontEncoding pdfFont
+    , encodeUtf8 $ "/BaseFont /" ++ pdfStandardFontBaseFont standardFont
+    , encodeUtf8 $ "/Subtype /"  ++ pdfStandardFontSubtype standardFont
+    , encodeUtf8 $ "/Encoding /" ++ pdfStandardFontEncoding standardFont
     , encodeUtf8 ">>"
     , encodeUtf8 "endobj"
     ]
+    where
+      standardFont = pdfFontStandardFont pdfFont
 
 -----------------------------------------------
 
@@ -523,6 +521,7 @@ data PdfStandardFont = PdfStandardFont
   , pdfStandardFontSubtype :: Text
   , pdfStandardFontEncoding :: Text
   }
+  deriving Eq
 
 instance ToJSON PdfStandardFont where
   toJSON o = object
@@ -843,17 +842,14 @@ instance IsExecutableAction Action where
     , pdfDocumentFonts =
         (pdfDocumentFonts pdfDoc)
         ++
-        [ buildFont fontObjId $ pdfDocumentStandardFont pdfDoc ]
+        [ PdfFont
+          { pdfFontObjId = fontObjId
+          , pdfFontStandardFont = pdfDocumentStandardFont pdfDoc
+          }
+        ]
     }
     where
       (pdfPages, initPages, lastPage) = pdfPagesTuple pdfDoc
       pageFontObjIds = pdfResourcesFontObjIds . pdfPageResources
-      buildFont objId stdFont =
-        PdfFont
-        { pdfFontObjId = objId
-        , pdfFontBaseFont = pdfStandardFontBaseFont stdFont
-        , pdfFontSubtype = pdfStandardFontSubtype stdFont
-        , pdfFontEncoding = pdfStandardFontEncoding stdFont
-        }
       fontObjId = pdfDocumentNextObjId pdfDoc
       nextObjId = pdfDocumentNextObjId pdfDoc + 1
