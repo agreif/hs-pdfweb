@@ -607,8 +607,8 @@ zapfDingbats = PdfStandardFont "ZapfDingbats" "Type1" "WinAnsiEncoding"
 currentFont :: PdfDocument -> Maybe PdfFont
 currentFont pdfDoc =
   L.find
-  (\pdfFont -> pdfFontStandardFont pdfFont == pdfDocumentStandardFont pdfDoc) $
-  pdfDocumentFonts pdfDoc
+  (\pdfFont -> pdfFontStandardFont pdfFont == pdfDocumentStandardFont pdfDoc)
+  (pdfDocumentFonts pdfDoc)
 
 currentFontId :: PdfDocument -> Maybe Int
 currentFontId pdfDoc =
