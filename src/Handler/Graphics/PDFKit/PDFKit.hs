@@ -5,16 +5,15 @@ module Handler.Graphics.PDFKit.PDFKit where
 import Import
 import qualified Data.List as L
 import qualified Data.ByteString.Char8 as B8
+import Data.Time
 import Handler.Graphics.PDFKit.Pdf
+import Handler.Graphics.PDFKit.Helpers
 
-info :: PdfBuilder
-info = build ActionInfoSetup
+producer :: Text -> PdfBuilder
+producer = build . ActionInfoSetProducer
 
-infoProducer :: Text -> PdfBuilder
-infoProducer = build . ActionInfoSetProducer
-
-infoCreator :: Text -> PdfBuilder
-infoCreator = build . ActionInfoSetCreator
+creator :: Text -> PdfBuilder
+creator = build . ActionInfoSetCreator
 
 font :: PdfStandardFont -> PdfBuilder
 font = build . ActionFont
@@ -44,12 +43,14 @@ text t x y = do
 
 -----------------------------------------------
 
-run :: Text -> PdfBuilderM b -> PdfDocument
-run creationDate (PdfBuilderM _ userActions) =
+buildPdfDoc :: UTCTime -> TimeZone -> PdfBuilderM b -> PdfDocument
+buildPdfDoc now timeZone (PdfBuilderM _ userActions) =
   L.foldl
   (\pdfDoc action -> execute action pdfDoc)
   (initialPdfDocument creationDate)
   (userActions ++ [ActionFinalize])
+  where
+      creationDate = pack $ formatLocalTime timeZone now
 
 -----------------------------------------------
 

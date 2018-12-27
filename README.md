@@ -8,6 +8,22 @@ see 'src/Handler/Pdf.hs'
 ## Sample
 
 ```haskell
+samplePdfDoc :: Handler PdfDocument
+samplePdfDoc = do
+  timeZone <- liftIO getCurrentTimeZone
+  now <- liftIO getCurrentTime
+  return $ buildPdfDoc now timeZone $ do
+    producer "sample producer"
+    creator "sample creator"
+    page
+      >> pageSize sA4
+      >> pageLayout landscape
+    font courier
+    text "abc" 99 199
+    font courierBold
+    text "def" 99 99
+
+-- Yesod Handler
 getSamplePdfInlineR :: Handler TypedContent
 getSamplePdfInlineR = do
   pdfDoc <- samplePdfDoc
@@ -15,6 +31,7 @@ getSamplePdfInlineR = do
     T.concat ["inline; filename=\"", "samplepdf.pdf", "\""]
   respond (encodeUtf8 "application/pdf") $ encodePdf pdfDoc
 
+-- Yesod Handler
 getSamplePdfDownloadR :: Handler TypedContent
 getSamplePdfDownloadR = do
   pdfDoc <- samplePdfDoc
@@ -22,20 +39,13 @@ getSamplePdfDownloadR = do
     T.concat ["attachment; filename=\"", "samplepdf.pdf", "\""]
   respond (encodeUtf8 "application/pdf") $ encodePdf pdfDoc
 
-samplePdfDoc :: Handler PdfDocument
-samplePdfDoc = do
-  timeZone <- currentTimeZone
-  now <- liftIO getCurrentTime
-  let creationDate = pack $ formatLocalTime timeZone now
-  return $ run creationDate $ do
-    info
-      >> infoProducer "the producer"
-      >> infoCreator "the creator"
-    font
-    page
-      >> pageSize sizeLETTER
-      >> pageSizeCustom 100 200.99
-      >> pageLayout landscape
-      >> pageMargin 123
-      >> pageMargins 123 124 125 126
+-- Yesod Handler
+getSamplePdfJsonR :: Handler Value
+getSamplePdfJsonR = do
+  pdfDoc <- samplePdfDoc
+  return $
+    toJSON
+    ( pdfDoc
+    , encodePdf' pdfDoc
+    )
 ```

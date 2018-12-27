@@ -14,7 +14,7 @@ data PdfDocument = PdfDocument
   , pdfDocumentHeaderLines :: [ByteString]
   , pdfDocumentCreationDate :: Text
   , pdfDocumentNextObjId :: Int
-  , pdfDocumentInfo :: Maybe PdfInfo
+  , pdfDocumentInfo :: PdfInfo
   , pdfDocumentRoot :: PdfRoot
   , pdfDocumentPages :: PdfPages
   , pdfDocumentStandardFont :: PdfStandardFont
@@ -56,7 +56,13 @@ initialPdfDocument creationDate =
                              ]
   , pdfDocumentCreationDate = creationDate
   , pdfDocumentNextObjId = nextObjId
-  , pdfDocumentInfo = Nothing
+  , pdfDocumentInfo =
+      PdfInfo
+      { pdfInfoObjId = infoObjId
+      , pdfInfoProducer = "hs-pdfkit"
+      , pdfInfoCreator = "hs-pdfkit"
+      , pdfInfoCreationDate = "D:" ++ creationDate ++ "Z"
+      }
   , pdfDocumentRoot =
       PdfRoot
       { pdfRootObjId = rootObjId
@@ -70,18 +76,15 @@ initialPdfDocument creationDate =
   , pdfDocumentStandardFont = helvetica
   , pdfDocumentFonts = []
   , pdfDocumentXref = PdfXref { pdfXrefPositions = [] }
-  , pdfDocumentTrailer =
-      PdfTrailer
-      { pdfTrailerSize = Nothing
-      , pdfTrailerInfo = Nothing
-      }
+  , pdfDocumentTrailer = PdfTrailer { pdfTrailerSize = Nothing }
   , pdfDocumentStartXref = Nothing
   }
   where
     version = "1.3"
-    rootObjId = 1
-    pagesObjId = 2
-    nextObjId = 3
+    infoObjId = 1
+    rootObjId = 2
+    pagesObjId = 3
+    nextObjId = 4
 
 -----------------------------------------------
 
@@ -368,13 +371,11 @@ instance ToByteStringLines PdfXref where
 
 data PdfTrailer = PdfTrailer
   { pdfTrailerSize :: Maybe Int
-  , pdfTrailerInfo :: Maybe Text
   }
 
 instance ToJSON PdfTrailer where
   toJSON o = object
     [ "size" .= pdfTrailerSize o
-    , "info" .= pdfTrailerInfo o
     ]
 
 instance ToByteStringLines PdfTrailer where
@@ -384,7 +385,7 @@ instance ToByteStringLines PdfTrailer where
     , encodeUtf8 "<<"
     , encodeUtf8 $ "/Size " ++ (maybeIntToText $ pdfTrailerSize pdfTrailer)
     , encodeUtf8 $ "/Root " ++ (ref $ pdfRootObjId $ pdfDocumentRoot pdfDoc)
-    , encodeUtf8 $ "/Info " ++ (maybeTextToText $ pdfTrailerInfo pdfTrailer)
+    , encodeUtf8 $ "/Info " ++ (ref $ pdfInfoObjId $ pdfDocumentInfo pdfDoc)
     , encodeUtf8 ">>"
     ]
 
@@ -637,13 +638,9 @@ pdfDocumentByteStringLineBlocks pdfDoc =
   ( -- header lines
     pdfDocumentHeaderLines pdfDoc
   , -- referencable line-blocks
-    [
-      ( toByteStringLines (pdfDocumentRoot pdfDoc) pdfDoc )
+    [ ( toByteStringLines (pdfDocumentInfo pdfDoc) pdfDoc )
+    , ( toByteStringLines (pdfDocumentRoot pdfDoc) pdfDoc )
     , ( toByteStringLines (pdfDocumentPages pdfDoc) pdfDoc )
-    , ( case pdfDocumentInfo pdfDoc of
-           Just pdfInfo -> toByteStringLines pdfInfo pdfDoc
-           _ -> []
-       )
     ]
     ++
     ( L.foldl
@@ -671,8 +668,7 @@ pdfDocumentByteStringLineBlocks pdfDoc =
 -----------------------------------------------
 
 data Action =
-  ActionInfoSetup
-  | ActionInfoSetProducer Text
+  ActionInfoSetProducer Text
   | ActionInfoSetCreator Text
   | ActionFinalize
   | ActionFont PdfStandardFont
@@ -691,35 +687,17 @@ build action = PdfBuilderM () [action]
 -----------------------------------------------
 
 instance IsExecutableAction Action where
-  execute ActionInfoSetup pdfDoc =
-    pdfDoc
-    { pdfDocumentNextObjId = nextObjId
-    , pdfDocumentInfo =
-        Just $ PdfInfo
-        { pdfInfoObjId = infoObjId
-        , pdfInfoProducer = "hs-pdfkit"
-        , pdfInfoCreator = "hs-pdfkit"
-        , pdfInfoCreationDate = "D:" ++ pdfDocumentCreationDate pdfDoc ++ "Z"
-        }
-    , pdfDocumentTrailer =
-        (pdfDocumentTrailer pdfDoc) { pdfTrailerInfo = Just $ ref infoObjId }
-    }
-    where
-      infoObjId = pdfDocumentNextObjId pdfDoc
-      nextObjId = pdfDocumentNextObjId pdfDoc + 1
 
   execute (ActionInfoSetProducer text) pdfDoc =
     pdfDoc
-    { pdfDocumentInfo = case (pdfDocumentInfo pdfDoc) of
-        Just pdfInfo -> Just $ pdfInfo { pdfInfoProducer = text}
-        _ -> Nothing
+    { pdfDocumentInfo =
+        (pdfDocumentInfo pdfDoc) { pdfInfoProducer = text}
     }
 
   execute (ActionInfoSetCreator text) pdfDoc =
     pdfDoc
-    { pdfDocumentInfo = case (pdfDocumentInfo pdfDoc) of
-        Just pdfInfo -> Just $ pdfInfo { pdfInfoCreator = text}
-        _ -> Nothing
+    { pdfDocumentInfo =
+        (pdfDocumentInfo pdfDoc) { pdfInfoCreator = text}
     }
 
   execute ActionFinalize pdfDoc =

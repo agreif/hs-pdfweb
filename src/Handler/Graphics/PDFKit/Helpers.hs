@@ -7,7 +7,8 @@ import Data.Time
 import Text.Printf
 
 formatLocalTime :: TimeZone -> UTCTime -> String
-formatLocalTime timeZone utcTime = formatTime defaultTimeLocale "%Y%m%d%H%M%S" $ utcToLocalTime timeZone utcTime
+formatLocalTime timeZone utcTime =
+  formatTime defaultTimeLocale "%Y%m%d%H%M%S" $ utcToLocalTime timeZone utcTime
 
 maybeTextToText :: Maybe Text -> Text
 maybeTextToText Nothing = ""
@@ -28,8 +29,3 @@ ref objId = intToText objId ++ " 0 R"
 
 formatXrefPos :: Int -> Text
 formatXrefPos i = pack $ printf "%010d" i
-
-currentTimeZone :: Handler TimeZone
-currentTimeZone = do
-  timeZone <- liftIO $ getCurrentTimeZone
-  return timeZone
