@@ -7,7 +7,6 @@ import qualified Data.List as L
 import qualified Data.ByteString.Char8 as B8
 import Data.Time
 import Handler.Graphics.PDFKit.Pdf
-import Handler.Graphics.PDFKit.Helpers
 
 producer :: Text -> PdfBuilder
 producer = build . ActionInfoSetProducer
@@ -47,10 +46,8 @@ buildPdfDoc :: UTCTime -> TimeZone -> PdfBuilderM b -> PdfDocument
 buildPdfDoc now timeZone (PdfBuilderM _ userActions) =
   L.foldl
   (\pdfDoc action -> execute action pdfDoc)
-  (initialPdfDocument creationDate)
+  (initialPdfDocument now timeZone)
   (userActions ++ [ActionFinalize])
-  where
-      creationDate = pack $ formatLocalTime timeZone now
 
 -----------------------------------------------
 
