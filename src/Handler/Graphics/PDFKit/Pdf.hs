@@ -3,6 +3,7 @@
 module Handler.Graphics.PDFKit.Pdf where
 
 import Import
+import Data.Time
 import qualified Data.List as L
 import qualified Data.Text as T
 import qualified Data.Maybe as M
@@ -47,13 +48,14 @@ instance ToByteStringLines PdfDocument where
       (headerLines, objectBlocks, footerLines) =
         pdfDocumentByteStringLineBlocks pdfDoc
 
-initialPdfDocument :: Text -> PdfDocument
-initialPdfDocument creationDate =
+initialPdfDocument :: UTCTime -> TimeZone -> PdfDocument
+initialPdfDocument now timeZone =
   PdfDocument
   { pdfDocumentVersion = version
-  , pdfDocumentHeaderLines = [ encodeUtf8 $ "%PDF-" ++ version
-                             , "%" ++ B8.pack ['\xff', '\xff', '\xff', '\xff']
-                             ]
+  , pdfDocumentHeaderLines =
+    [ encodeUtf8 $ "%PDF-" ++ version
+    , "%" ++ B8.pack ['\xff', '\xff', '\xff', '\xff']
+    ]
   , pdfDocumentCreationDate = creationDate
   , pdfDocumentNextObjId = nextObjId
   , pdfDocumentInfo =
@@ -80,6 +82,7 @@ initialPdfDocument creationDate =
   , pdfDocumentStartXref = Nothing
   }
   where
+    creationDate = T.pack $ formatLocalTime timeZone now
     version = "1.3"
     infoObjId = 1
     rootObjId = 2
