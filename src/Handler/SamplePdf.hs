@@ -46,5 +46,5 @@ samplePdfDoc = do
       >> pageMargins 123 124 125 126
     font fontCourier
     text "abc" 99 199
-    -- font fontCourierBold
-    -- text "def" 99 99
+    font fontCourierBold
+    text "def" 99 99

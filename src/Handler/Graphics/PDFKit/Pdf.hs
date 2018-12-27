@@ -216,10 +216,18 @@ instance ToByteStringLines PdfResources where
     , encodeUtf8 $ "/ProcSet [/PDF /Text /ImageB /ImageC /ImageI]"
     ]
     ++
-    ( L.map (\pdfFont ->
-                encodeUtf8 $ "/Font << /" ++ pdfFontName pdfFont ++ " "
-                ++ (ref $ pdfFontObjId pdfFont) ++ " >>"
-            ) $ pdfResourcesFonts pdfResources
+    ( case pdfResourcesFonts pdfResources of
+        [] -> []
+        pdfFonts ->
+          [ encodeUtf8 $ "/Font <<" ]
+          ++
+          ( L.map (\pdfFont ->
+                     encodeUtf8 $ "/" ++ pdfFontName pdfFont ++ " "
+                     ++ (ref $ pdfFontObjId pdfFont)
+                  ) pdfFonts
+          )
+          ++
+          [ encodeUtf8 $ ">>" ]
     )
     ++
     [ encodeUtf8 ">>"
