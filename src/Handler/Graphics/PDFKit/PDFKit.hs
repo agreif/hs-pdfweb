@@ -17,6 +17,9 @@ creator = build . ActionInfoSetCreator
 font :: PdfStandardFont -> PdfBuilder
 font = build . ActionFont
 
+fontSize :: Int -> PdfBuilder
+fontSize = build . ActionFontSetSize
+
 page :: PdfBuilder
 page = build ActionPage
 

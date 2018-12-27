@@ -41,7 +41,8 @@ samplePdfDoc = do
     page
       >> pageSize sLetter
       >> pageLayout portrait
-    font courier
-    text "x:100 y:200" 100 200
     font courierBold
     text "x:100 y:100" 100 100
+    fontSize 12
+    font courier
+    text "x:100 y:200" 100 200

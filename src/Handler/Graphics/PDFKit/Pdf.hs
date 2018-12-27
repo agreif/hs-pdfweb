@@ -21,6 +21,7 @@ data PdfDocument = PdfDocument
   , pdfDocumentPages :: PdfPages
   , pdfDocumentStandardFont :: PdfStandardFont
   , pdfDocumentFonts :: [PdfFont]
+  , pdfDocumentFontSize :: Int
   , pdfDocumentTrailer :: PdfTrailer
   , pdfDocumentXref :: PdfXref
   , pdfDocumentStartXref :: Maybe Int
@@ -35,6 +36,7 @@ instance ToJSON PdfDocument where
     , "pages" .= pdfDocumentPages o
     , "standardFont" .= pdfDocumentStandardFont o
     , "fonts" .= pdfDocumentFonts o
+    , "fontSize" .= pdfDocumentFontSize o
     , "trailer" .= pdfDocumentTrailer o
     , "xref" .= pdfDocumentXref o
     , "startxref" .= pdfDocumentStartXref o
@@ -78,12 +80,14 @@ initialPdfDocument now timeZone =
       }
   , pdfDocumentStandardFont = defaultFont
   , pdfDocumentFonts = []
+  , pdfDocumentFontSize = defaultFontSize
   , pdfDocumentXref = PdfXref { pdfXrefPositions = [] }
   , pdfDocumentTrailer = PdfTrailer { pdfTrailerSize = Nothing }
   , pdfDocumentStartXref = Nothing
   }
   where
     creationDate = T.pack $ formatLocalTime timeZone now
+    defaultFontSize = 24
     version = "1.3"
     infoObjId = 1
     rootObjId = 2
@@ -325,7 +329,7 @@ instance ToByteStringLines (PdfContents, PdfPage) where
            , "/" ++ ( case pdfTextFont pdfText of
                         Just pdfFont -> pdfFontName pdfFont
                         _ -> ""
-                    ) ++ " 24 Tf"
+                    ) ++ " " ++ (intToText $ pdfTextFontSize pdfText) ++ " Tf"
            , "(" ++ (pdfTextText pdfText) ++ ") Tj"
            , "ET"
            , "Q"
@@ -345,6 +349,7 @@ data PdfText = PdfText
   , pdfTextX :: Double
   , pdfTextY :: Double
   , pdfTextFont :: Maybe PdfFont
+  , pdfTextFontSize :: Int
   }
 
 instance ToJSON PdfText where
@@ -353,6 +358,7 @@ instance ToJSON PdfText where
     , "x" .= pdfTextX o
     , "y" .= pdfTextY o
     , "font" .= pdfTextFont o
+    , "fontSize" .= pdfTextFontSize o
     ]
 
 -----------------------------------------------
@@ -691,6 +697,7 @@ data Action =
   | ActionFinalize
   | ActionFont PdfStandardFont
   | ActionFontAddIfMissing
+  | ActionFontSetSize Int
   | ActionPage
   | ActionPageSetSize PdfPageSize
   | ActionPageSetLayout PdfPageLayout
@@ -734,6 +741,9 @@ instance IsExecutableAction Action where
 
   execute (ActionFont standardFont) pdfDoc =
     pdfDoc { pdfDocumentStandardFont = standardFont }
+
+  execute (ActionFontSetSize fontSize) pdfDoc =
+    pdfDoc { pdfDocumentFontSize = fontSize }
 
   execute (ActionFontAddIfMissing) pdfDoc =
     pdfDoc
@@ -890,6 +900,7 @@ instance IsExecutableAction Action where
                       , pdfTextX = x
                       , pdfTextY = y
                       , pdfTextFont = currentFont pdfDoc
+                      , pdfTextFontSize = pdfDocumentFontSize pdfDoc
                       }
                   ]
                 }
