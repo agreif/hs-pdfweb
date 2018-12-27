@@ -75,7 +75,7 @@ initialPdfDocument now timeZone =
       { pdfPagesObjId = pagesObjId
       , pdfPagesKids = []
       }
-  , pdfDocumentStandardFont = helvetica
+  , pdfDocumentStandardFont = defaultFont
   , pdfDocumentFonts = []
   , pdfDocumentXref = PdfXref { pdfXrefPositions = [] }
   , pdfDocumentTrailer = PdfTrailer { pdfTrailerSize = Nothing }
@@ -437,6 +437,9 @@ instance ToJSON PdfPageSize where
     , "height" .= pdfPageSizeHeight o
     ]
 
+defaultPageSize :: PdfPageSize
+defaultPageSize = sA4
+
 s4A0 :: PdfPageSize
 s4A0 = PdfPageSize 4767.87 6740.79
 s2A0 :: PdfPageSize
@@ -553,6 +556,9 @@ instance ToJSON PdfStandardFont where
     , "subtype" .= pdfStandardFontSubtype o
     , "encoding" .= pdfStandardFontEncoding o
     ]
+
+defaultFont :: PdfStandardFont
+defaultFont = helvetica
 
 courier :: PdfStandardFont
 courier = PdfStandardFont "Courier" "Type1" "WinAnsiEncoding"
@@ -752,7 +758,7 @@ instance IsExecutableAction Action where
             ++
             [ PdfPage
               { pdfPageObjId = pageObjId
-              , pdfPageSize = sA4
+              , pdfPageSize = defaultPageSize
               , pdfPageMargins = defaultPageMargins
               , pdfPageLayout = Portrait
               , pdfPageResources =
