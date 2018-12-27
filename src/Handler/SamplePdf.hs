@@ -40,11 +40,11 @@ samplePdfDoc = do
       >> infoProducer "the producer"
       >> infoCreator "the creator"
     page
-      >> pageSize sizeLETTER
+      >> pageSize sLetter
       >> pageLayout landscape
       >> pageMargin 123
       >> pageMargins 123 124 125 126
-    font fontCourier
+    font courier
     text "abc" 99 199
-    font fontCourierBold
+    font courierBold
     text "def" 99 99
