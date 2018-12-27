@@ -242,6 +242,7 @@ instance ToJSON PdfPage where
                                Portrait -> "portrait"
                                Landscape -> "landscape" )
     , "resources" .= pdfPageResources o
+    , "contents" .= pdfPageContents o
     ]
 
 instance ToByteStringLines PdfPage where
@@ -707,26 +708,6 @@ instance IsExecutableAction Action where
   execute (ActionFont standardFont) pdfDoc =
     pdfDoc { pdfDocumentStandardFont = standardFont }
 
-  -- execute (ActionFont standardFont) pdfDoc =
-  --   pdfDoc
-  --   { pdfDocumentNextObjId = succ $ pdfDocumentNextObjId pdfDoc
-  --   , pdfDocumentFont =
-  --       Just $ buildFont (pdfDocumentNextObjId pdfDoc) standardFont
-  --   , pdfDocumentTrailer =
-  --     (pdfDocumentTrailer pdfDoc)
-  --     { pdfTrailerSize = succ $ pdfTrailerSize (pdfDocumentTrailer pdfDoc)
-  --     }
-  --   }
-  --   where
-  --     buildFont :: Int -> PdfStandardFont -> PdfFont
-  --     buildFont objId stdFont =
-  --       PdfFont
-  --       { pdfFontObjId = objId
-  --       , pdfFontBaseFont = pdfStandardFontBaseFont stdFont
-  --       , pdfFontSubtype = pdfStandardFontSubtype stdFont
-  --       , pdfFontEncoding = pdfStandardFontEncoding stdFont
-  --       }
-
   execute ActionPage pdfDoc =
     pdfDoc
     { pdfDocumentNextObjId = nextObjId
@@ -846,12 +827,14 @@ instance IsExecutableAction Action where
                 { pdfResourcesFontObjIds = pageFontObjIds lastPage ++ [fontObjId] }
             , pdfPageContents =
                 (pdfPageContents lastPage)
-                { pdfContentsTexts = (pdfContentsTexts $ pdfPageContents lastPage) ++
-                  [ PdfText
-                    { pdfTextText = t
-                    , pdfTextX = x
-                    , pdfTextY = y
-                    }
+                { pdfContentsTexts =
+                    (pdfContentsTexts $ pdfPageContents lastPage)
+                    ++
+                    [ PdfText
+                      { pdfTextText = t
+                      , pdfTextX = x
+                      , pdfTextY = y
+                      }
                   ]
                 }
             }
