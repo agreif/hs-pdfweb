@@ -39,9 +39,9 @@ samplePdfDoc = do
     producer "sample producer"
     creator "sample creator"
     page
-      >> pageSize sA4
-      >> pageLayout landscape
+      >> pageSize sLetter
+      >> pageLayout portrait
     font courier
-    text "abc" 99 199
+    text "x:100 y:200" 100 200
     font courierBold
-    text "def" 99 99
+    text "x:100 y:100" 100 100
