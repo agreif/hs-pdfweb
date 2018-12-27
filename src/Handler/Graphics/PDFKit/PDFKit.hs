@@ -52,7 +52,7 @@ buildPdfDoc now timeZone (PdfBuilderM _ userActions) =
 -----------------------------------------------
 
 encodePdf :: PdfDocument -> ByteString
-encodePdf pdfDoc = B8.unlines $ toByteStringLines pdfDoc pdfDoc
+encodePdf pdfDoc = B8.unlines $ toByteStringLines pdfDoc
 
 encodePdf' :: PdfDocument -> [Text]
-encodePdf' pdfDoc = map decodeUtf8 $ toByteStringLines pdfDoc pdfDoc
+encodePdf' pdfDoc = map decodeUtf8 $ toByteStringLines pdfDoc

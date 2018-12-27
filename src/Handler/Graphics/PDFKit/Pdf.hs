@@ -1,5 +1,6 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleInstances #-}
 module Handler.Graphics.PDFKit.Pdf where
 
 import Import
@@ -40,7 +41,7 @@ instance ToJSON PdfDocument where
     ]
 
 instance ToByteStringLines PdfDocument where
-  toByteStringLines pdfDoc _ =
+  toByteStringLines pdfDoc =
     headerLines
     ++ L.foldl (\acc x -> acc ++ x) [] objectBlocks
     ++ footerLines
@@ -107,7 +108,7 @@ instance ToJSON PdfInfo where
     ]
 
 instance ToByteStringLines PdfInfo where
-  toByteStringLines pdfInfo _ =
+  toByteStringLines pdfInfo =
     [ encodeUtf8 $ (pack $ show $ pdfInfoObjId pdfInfo) ++ " 0 obj"
     , encodeUtf8 $ "% ------------------------------------------------------ info " ++ (intToText $ pdfInfoObjId pdfInfo)
     , encodeUtf8 "<<"
@@ -131,8 +132,8 @@ instance ToJSON PdfRoot where
     , "pages" .= pdfRootPages o
     ]
 
-instance ToByteStringLines PdfRoot where
-  toByteStringLines pdfRoot pdfDoc =
+instance ToByteStringLines (PdfRoot, PdfDocument) where
+  toByteStringLines (pdfRoot, pdfDoc) =
     [ encodeUtf8 $ (pack $ show $ pdfRootObjId pdfRoot) ++ " 0 obj"
     , encodeUtf8 $ "% ------------------------------------------------------ root " ++ (intToText $ pdfRootObjId pdfRoot)
     , encodeUtf8 "<<"
@@ -156,7 +157,7 @@ instance ToJSON PdfPages where
     ]
 
 instance ToByteStringLines PdfPages where
-  toByteStringLines pdfPages _ =
+  toByteStringLines pdfPages =
     [ encodeUtf8 $ (pack $ show $ pdfPagesObjId pdfPages) ++ " 0 obj"
     , encodeUtf8 $ "% ------------------------------------------------------ pages " ++ (intToText $ pdfPagesObjId pdfPages)
     , encodeUtf8 "<<"
@@ -186,7 +187,7 @@ instance ToJSON PdfFont where
     ]
 
 instance ToByteStringLines PdfFont where
-  toByteStringLines pdfFont _ =
+  toByteStringLines pdfFont =
     [ encodeUtf8 $ (pack $ show $ pdfFontObjId pdfFont) ++ " 0 obj"
     , encodeUtf8 $ "% ------------------------------------------------------ Font " ++ (intToText $ pdfFontObjId pdfFont)
     , encodeUtf8 "<<"
@@ -215,7 +216,7 @@ instance ToJSON PdfResources where
     ]
 
 instance ToByteStringLines PdfResources where
-  toByteStringLines pdfResources _ =
+  toByteStringLines pdfResources =
     [ encodeUtf8 $ (pack $ show $ pdfResourcesObjId pdfResources) ++ " 0 obj"
     , encodeUtf8 $ "% ------------------------------------------------------ Resources " ++ (intToText $ pdfResourcesObjId pdfResources)
     , encodeUtf8 "<<"
@@ -263,8 +264,8 @@ instance ToJSON PdfPage where
     , "contents" .= pdfPageContents o
     ]
 
-instance ToByteStringLines PdfPage where
-  toByteStringLines pdfPage pdfDoc =
+instance ToByteStringLines (PdfPage, PdfDocument) where
+  toByteStringLines (pdfPage, pdfDoc) =
     [ encodeUtf8 $ (pack $ show $ pdfPageObjId pdfPage) ++ " 0 obj"
     , encodeUtf8 $ "% ------------------------------------------------------ Page " ++ (intToText $ pdfPageObjId pdfPage)
     , encodeUtf8 "<<"
@@ -295,39 +296,47 @@ instance ToJSON PdfContents where
     , "texts" .= pdfContentsTexts o
     ]
 
-instance ToByteStringLines PdfContents where
-  toByteStringLines pdfContents _ =
+instance ToByteStringLines (PdfContents, PdfPage) where
+  toByteStringLines (pdfContents, pdfPage) =
     [ encodeUtf8 $ (pack $ show $ pdfContentsObjId pdfContents) ++ " 0 obj"
     , encodeUtf8 $ "% ------------------------------------------------------ Contents " ++ (intToText $ pdfContentsObjId pdfContents)
     , encodeUtf8 "<<"
     , encodeUtf8 $ "/Length " ++ intToText streamLength
     , encodeUtf8 ">>"
     , encodeUtf8 "stream"
+    , encodeUtf8 translateOrigin
     ]
     ++
-    ( map encodeUtf8 streamLines )
+    ( map encodeUtf8 streamTextLines )
     ++
     [ encodeUtf8 "endstream"
     ]
     where
-      streamLines :: [Text]
-      streamLines =
+      PdfPageSize {pdfPageSizeHeight = pageHeight} = pdfPageSize pdfPage
+      streamTextLines =
         L.foldl
         (\acc pdfText ->
            acc
            ++
-           [ "BT"
+           [ "q"
+           , translateOrigin
+           , "BT"
+           , translatePos pdfText
            , "/" ++ ( case pdfTextFont pdfText of
                         Just pdfFont -> pdfFontName pdfFont
                         _ -> ""
                     ) ++ " 24 Tf"
-           , (doubleToText $ pdfTextX pdfText) ++ " " ++ (doubleToText $ pdfTextY pdfText) ++ " Td"
            , "(" ++ (pdfTextText pdfText) ++ ") Tj"
            , "ET"
+           , "Q"
            ]
         ) [] $ pdfContentsTexts pdfContents
+      translateOrigin = "1 0 0 -1 0 " ++ (doubleToText pageHeight) ++ " cm"
+      translatePos pdfText =
+        "1 0 0 1 " ++ (doubleToText $ pdfTextX pdfText)
+        ++ " " ++ (doubleToText $ pageHeight-(pdfTextY pdfText)) ++ " Tm"
       streamLength :: Int
-      streamLength = length $ encodeUtf8 $ unlines streamLines
+      streamLength = length $ encodeUtf8 $ unlines streamTextLines
 
 -----------------------------------------------
 
@@ -357,8 +366,8 @@ instance ToJSON PdfXref where
     [ "positions" .= pdfXrefPositions o
     ]
 
-instance ToByteStringLines PdfXref where
-  toByteStringLines pdfXref pdfDoc =
+instance ToByteStringLines (PdfXref, PdfDocument) where
+  toByteStringLines (pdfXref, pdfDoc) =
     [ encodeUtf8 "xref"
     , encodeUtf8 "% ------------------------------------------------------ xref"
     , encodeUtf8 $ "0 " ++ ( case pdfTrailerSize $ pdfDocumentTrailer pdfDoc of
@@ -381,8 +390,8 @@ instance ToJSON PdfTrailer where
     [ "size" .= pdfTrailerSize o
     ]
 
-instance ToByteStringLines PdfTrailer where
-  toByteStringLines pdfTrailer pdfDoc =
+instance ToByteStringLines (PdfTrailer, PdfDocument) where
+  toByteStringLines (pdfTrailer, pdfDoc) =
     [ encodeUtf8 "trailer"
     , encodeUtf8 "% ------------------------------------------------------ trailer"
     , encodeUtf8 "<<"
@@ -604,7 +613,7 @@ currentFontId pdfDoc =
 -----------------------------------------------
 
 class ToByteStringLines b where
-  toByteStringLines :: b -> PdfDocument -> [ByteString]
+  toByteStringLines :: b -> [ByteString]
 
 class IsExecutableAction a where
   execute :: a -> PdfDocument -> PdfDocument
@@ -647,16 +656,16 @@ pdfDocumentByteStringLineBlocks pdfDoc =
   ( -- header lines
     pdfDocumentHeaderLines pdfDoc
   , -- referencable line-blocks
-    [ ( toByteStringLines (pdfDocumentInfo pdfDoc) pdfDoc )
-    , ( toByteStringLines (pdfDocumentRoot pdfDoc) pdfDoc )
-    , ( toByteStringLines (pdfDocumentPages pdfDoc) pdfDoc )
+    [ toByteStringLines $ pdfDocumentInfo pdfDoc
+    , toByteStringLines (pdfDocumentRoot pdfDoc, pdfDoc)
+    , toByteStringLines $ pdfDocumentPages pdfDoc
     ]
     ++
     ( L.foldl
       (\acc pdfPage ->
-          [ toByteStringLines pdfPage pdfDoc
-          , toByteStringLines (pdfPageResources pdfPage) pdfDoc
-          , toByteStringLines (pdfPageContents pdfPage) pdfDoc
+          [ toByteStringLines (pdfPage, pdfDoc)
+          , toByteStringLines $ pdfPageResources pdfPage
+          , toByteStringLines (pdfPageContents pdfPage, pdfPage)
           ]
           ++ acc
       )
@@ -664,10 +673,10 @@ pdfDocumentByteStringLineBlocks pdfDoc =
       (pdfPagesKids $ pdfDocumentPages pdfDoc)
     )
     ++
-    ( L.map (\pdfFont -> toByteStringLines pdfFont pdfDoc) $ pdfDocumentFonts pdfDoc )
+    ( L.map (\pdfFont -> toByteStringLines pdfFont) $ pdfDocumentFonts pdfDoc )
   , -- footer lines
-    ( toByteStringLines (pdfDocumentXref pdfDoc) pdfDoc )
-    ++ ( toByteStringLines (pdfDocumentTrailer pdfDoc) pdfDoc )
+    ( toByteStringLines (pdfDocumentXref pdfDoc, pdfDoc))
+    ++ ( toByteStringLines (pdfDocumentTrailer pdfDoc, pdfDoc))
     ++ [ encodeUtf8 "startxref"
        , encodeUtf8 $ maybeIntToText $ pdfDocumentStartXref pdfDoc
        , encodeUtf8 "%%EOF"
