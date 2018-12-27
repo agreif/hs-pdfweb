@@ -4,14 +4,15 @@ module Handler.SamplePdf where
 
 import Import
 import qualified Data.Text as T
+import Data.Time
 import Handler.Graphics.PDFKit.PDFKit
 import Handler.Graphics.PDFKit.Pdf
-import Handler.Graphics.PDFKit.Helpers
 
 getSamplePdfJsonR :: Handler Value
 getSamplePdfJsonR = do
   pdfDoc <- samplePdfDoc
-  return $ toJSON
+  return $
+    toJSON
     ( pdfDoc
     , encodePdf' pdfDoc
     )
@@ -32,18 +33,14 @@ getSamplePdfDownloadR = do
 
 samplePdfDoc :: Handler PdfDocument
 samplePdfDoc = do
-  timeZone <- currentTimeZone
+  timeZone <- liftIO getCurrentTimeZone
   now <- liftIO getCurrentTime
-  let creationDate = pack $ formatLocalTime timeZone now
-  return $ run creationDate $ do
-    info
-      >> infoProducer "the producer"
-      >> infoCreator "the creator"
+  return $ buildPdfDoc now timeZone $ do
+    producer "sample producer"
+    creator "sample creator"
     page
-      >> pageSize sLetter
+      >> pageSize sA4
       >> pageLayout landscape
-      >> pageMargin 123
-      >> pageMargins 123 124 125 126
     font courier
     text "abc" 99 199
     font courierBold
