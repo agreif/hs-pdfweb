@@ -44,4 +44,5 @@ samplePdfDoc = do
       >> pageLayout landscape
       >> pageMargin 123
       >> pageMargins 123 124 125 126
-    text "abc" 99 199 
+    text "abc" 99 199
+    text "def" 99 99
