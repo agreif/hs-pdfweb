@@ -5,6 +5,7 @@ module Handler.Graphics.PDFKit.Pdf where
 import Import
 import qualified Data.List as L
 import qualified Data.Text as T
+import qualified Data.Maybe as M
 import qualified Data.ByteString.Char8 as B8
 import Handler.Graphics.PDFKit.Helpers
 
@@ -166,12 +167,15 @@ instance ToByteStringLines PdfPages where
 
 data PdfFont = PdfFont
   { pdfFontObjId :: Int
+  , pdfFontName :: Text
   , pdfFontStandardFont ::PdfStandardFont
   }
+  deriving Eq
 
 instance ToJSON PdfFont where
   toJSON o = object
     [ "objId" .= pdfFontObjId o
+    , "name" .= pdfFontName o
     , "standardFont" .= pdfFontStandardFont o
     ]
 
@@ -181,6 +185,7 @@ instance ToByteStringLines PdfFont where
     , encodeUtf8 $ "% ------------------------------------------------------ Font " ++ (intToText $ pdfFontObjId pdfFont)
     , encodeUtf8 "<<"
     , encodeUtf8 $ "/Type /Font"
+    , encodeUtf8 $ "/Name /" ++ pdfFontName pdfFont
     , encodeUtf8 $ "/BaseFont /" ++ pdfStandardFontBaseFont standardFont
     , encodeUtf8 $ "/Subtype /"  ++ pdfStandardFontSubtype standardFont
     , encodeUtf8 $ "/Encoding /" ++ pdfStandardFontEncoding standardFont
@@ -194,13 +199,13 @@ instance ToByteStringLines PdfFont where
 
 data PdfResources = PdfResources
   { pdfResourcesObjId :: Int
-  , pdfResourcesFontObjIds :: [Int]
+  , pdfResourcesFonts :: [PdfFont]
   }
 
 instance ToJSON PdfResources where
   toJSON o = object
     [ "objId" .= pdfResourcesObjId o
-    , "fontObjIds" .= pdfResourcesFontObjIds o
+    , "fonts" .= pdfResourcesFonts o
     ]
 
 instance ToByteStringLines PdfResources where
@@ -211,9 +216,10 @@ instance ToByteStringLines PdfResources where
     , encodeUtf8 $ "/ProcSet [/PDF /Text /ImageB /ImageC /ImageI]"
     ]
     ++
-    ( L.map (\ fontObjId ->
-               encodeUtf8 $ "/Font << /F1 " ++ (ref fontObjId) ++ " >>"
-            ) $ pdfResourcesFontObjIds pdfResources
+    ( L.map (\pdfFont ->
+                encodeUtf8 $ "/Font << /" ++ pdfFontName pdfFont ++ " "
+                ++ (ref $ pdfFontObjId pdfFont) ++ " >>"
+            ) $ pdfResourcesFonts pdfResources
     )
     ++
     [ encodeUtf8 ">>"
@@ -293,14 +299,18 @@ instance ToByteStringLines PdfContents where
       streamLines :: [Text]
       streamLines =
         L.foldl
-        (\acc pdfText -> acc
-                         ++
-                         [ "BT"
-                         , "/F1 24 Tf"
-                         , (doubleToText $ pdfTextX pdfText) ++ " " ++ (doubleToText $ pdfTextY pdfText) ++ " Td"
-                         , "(" ++ (pdfTextText pdfText) ++ ") Tj"
-                         , "ET"
-                         ]
+        (\acc pdfText ->
+           acc
+           ++
+           [ "BT"
+           , "/" ++ ( case pdfTextFont pdfText of
+                        Just pdfFont -> pdfFontName pdfFont
+                        _ -> ""
+                    ) ++ " 24 Tf"
+           , (doubleToText $ pdfTextX pdfText) ++ " " ++ (doubleToText $ pdfTextY pdfText) ++ " Td"
+           , "(" ++ (pdfTextText pdfText) ++ ") Tj"
+           , "ET"
+           ]
         ) [] $ pdfContentsTexts pdfContents
       streamLength :: Int
       streamLength = length $ encodeUtf8 $ unlines streamLines
@@ -311,6 +321,7 @@ data PdfText = PdfText
   { pdfTextText :: Text
   , pdfTextX :: Double
   , pdfTextY :: Double
+  , pdfTextFont :: Maybe PdfFont
   }
 
 instance ToJSON PdfText where
@@ -318,6 +329,7 @@ instance ToJSON PdfText where
     [ "text" .= pdfTextText o
     , "x" .= pdfTextX o
     , "y" .= pdfTextY o
+    , "font" .= pdfTextFont o
     ]
 
 -----------------------------------------------
@@ -559,6 +571,18 @@ fontSymbol = PdfStandardFont "Symbol" "Type1" "WinAnsiEncoding"
 fontZapfDingbats :: PdfStandardFont
 fontZapfDingbats = PdfStandardFont "ZapfDingbats" "Type1" "WinAnsiEncoding"
 
+currentFont :: PdfDocument -> Maybe PdfFont
+currentFont pdfDoc =
+  L.find
+  (\pdfFont -> pdfFontStandardFont pdfFont == pdfDocumentStandardFont pdfDoc) $
+  pdfDocumentFonts pdfDoc
+
+currentFontId :: PdfDocument -> Maybe Int
+currentFontId pdfDoc =
+  case currentFont pdfDoc of
+    Just pdfFont -> Just $ pdfFontObjId pdfFont
+    _ -> Nothing
+
 -----------------------------------------------
 
 class ToByteStringLines b where
@@ -644,7 +668,7 @@ data Action =
   | ActionInfoSetCreator Text
   | ActionFinalize
   | ActionFont PdfStandardFont
-  -- | ActionResources
+  | ActionFontAddIfMissing
   | ActionPage
   | ActionPageSetSize PdfPageSize
   | ActionPageSetLayout PdfPageLayout
@@ -707,6 +731,28 @@ instance IsExecutableAction Action where
   execute (ActionFont standardFont) pdfDoc =
     pdfDoc { pdfDocumentStandardFont = standardFont }
 
+  execute (ActionFontAddIfMissing) pdfDoc =
+    pdfDoc
+    { pdfDocumentNextObjId = nextObjId
+    , pdfDocumentFonts =
+        (pdfDocumentFonts pdfDoc)
+        ++
+        if fontAlreadyAdded
+        then []
+        else [ PdfFont
+               { pdfFontObjId = fontObjId
+               , pdfFontName = "F" ++ intToText fontObjId
+               , pdfFontStandardFont = pdfDocumentStandardFont pdfDoc
+               }
+             ]
+    }
+    where
+      fontAlreadyAdded = M.isJust $ currentFont pdfDoc
+      fontObjId = pdfDocumentNextObjId pdfDoc
+      nextObjId = if fontAlreadyAdded
+                  then pdfDocumentNextObjId pdfDoc
+                  else pdfDocumentNextObjId pdfDoc + 1+ 1
+
   execute ActionPage pdfDoc =
     pdfDoc
     { pdfDocumentNextObjId = nextObjId
@@ -723,7 +769,7 @@ instance IsExecutableAction Action where
               , pdfPageResources =
                   PdfResources
                   { pdfResourcesObjId = resourcesObjId
-                  , pdfResourcesFontObjIds = []
+                  , pdfResourcesFonts = []
                   }
               , pdfPageContents =
                   PdfContents
@@ -814,8 +860,7 @@ instance IsExecutableAction Action where
 
   execute (ActionText t x y) pdfDoc =
     pdfDoc
-    { pdfDocumentNextObjId = nextObjId
-    , pdfDocumentPages =
+    { pdfDocumentPages =
         pdfPages
         { pdfPagesKids =
           initPages
@@ -823,7 +868,14 @@ instance IsExecutableAction Action where
           [ lastPage
             { pdfPageResources =
                 (pdfPageResources lastPage)
-                { pdfResourcesFontObjIds = pageFontObjIds lastPage ++ [fontObjId] }
+                { pdfResourcesFonts =
+                    L.nub $ ( pageFonts lastPage
+                              ++
+                              case currentFont pdfDoc of
+                                Just pdfFont -> [pdfFont]
+                                _ -> []
+                            )
+                }
             , pdfPageContents =
                 (pdfPageContents lastPage)
                 { pdfContentsTexts =
@@ -833,23 +885,14 @@ instance IsExecutableAction Action where
                       { pdfTextText = t
                       , pdfTextX = x
                       , pdfTextY = y
+                      , pdfTextFont = currentFont pdfDoc
                       }
                   ]
                 }
             }
           ]
         }
-    , pdfDocumentFonts =
-        (pdfDocumentFonts pdfDoc)
-        ++
-        [ PdfFont
-          { pdfFontObjId = fontObjId
-          , pdfFontStandardFont = pdfDocumentStandardFont pdfDoc
-          }
-        ]
     }
     where
       (pdfPages, initPages, lastPage) = pdfPagesTuple pdfDoc
-      pageFontObjIds = pdfResourcesFontObjIds . pdfPageResources
-      fontObjId = pdfDocumentNextObjId pdfDoc
-      nextObjId = pdfDocumentNextObjId pdfDoc + 1
+      pageFonts = pdfResourcesFonts . pdfPageResources

@@ -38,7 +38,9 @@ pageMargins :: Double -> Double -> Double -> Double -> PdfBuilder
 pageMargins t l b r = build $ ActionPageSetMargins t l b r
 
 text :: Text -> Double -> Double -> PdfBuilder
-text t x y = build $ ActionText t x y
+text t x y = do
+  build ActionFontAddIfMissing
+  build $ ActionText t x y
 
 -----------------------------------------------
 
