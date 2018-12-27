@@ -67,7 +67,7 @@ initialPdfDocument creationDate =
       { pdfPagesObjId = pagesObjId
       , pdfPagesKids = []
       }
-  , pdfDocumentStandardFont = fontHelvetica
+  , pdfDocumentStandardFont = helvetica
   , pdfDocumentFonts = []
   , pdfDocumentXref = PdfXref { pdfXrefPositions = [] }
   , pdfDocumentTrailer =
@@ -433,106 +433,106 @@ instance ToJSON PdfPageSize where
     , "height" .= pdfPageSizeHeight o
     ]
 
-size4A0 :: PdfPageSize
-size4A0 = PdfPageSize 4767.87 6740.79
-size2A0 :: PdfPageSize
-size2A0 = PdfPageSize 3370.39 4767.87
-sizeA0 :: PdfPageSize
-sizeA0 = PdfPageSize 2383.94 3370.39
-sizeA1 :: PdfPageSize
-sizeA1 = PdfPageSize 1683.78 2383.94
-sizeA2 :: PdfPageSize
-sizeA2 = PdfPageSize 1190.55 1683.78
-sizeA3 :: PdfPageSize
-sizeA3 = PdfPageSize 841.89 1190.55
-sizeA4 :: PdfPageSize
-sizeA4 = PdfPageSize 595.28 841.89
-sizeA5 :: PdfPageSize
-sizeA5 = PdfPageSize 419.53 595.28
-sizeA6 :: PdfPageSize
-sizeA6 = PdfPageSize 297.64 419.53
-sizeA7 :: PdfPageSize
-sizeA7 = PdfPageSize 209.76 297.64
-sizeA8 :: PdfPageSize
-sizeA8 = PdfPageSize 147.40 209.76
-sizeA9 :: PdfPageSize
-sizeA9 = PdfPageSize 104.88 147.40
-sizeA10 :: PdfPageSize
-sizeA10 = PdfPageSize 73.70 104.88
-sizeB0 :: PdfPageSize
-sizeB0 = PdfPageSize 2834.65 4008.19
-sizeB1 :: PdfPageSize
-sizeB1 = PdfPageSize 2004.09 2834.65
-sizeB2 :: PdfPageSize
-sizeB2 = PdfPageSize 1417.32 2004.09
-sizeB3 :: PdfPageSize
-sizeB3 = PdfPageSize 1000.63 1417.32
-sizeB4 :: PdfPageSize
-sizeB4 = PdfPageSize 708.66 1000.63
-sizeB5 :: PdfPageSize
-sizeB5 = PdfPageSize 498.90 708.66
-sizeB6 :: PdfPageSize
-sizeB6 = PdfPageSize 354.33 498.90
-sizeB7 :: PdfPageSize
-sizeB7 = PdfPageSize 249.45 354.33
-sizeB8 :: PdfPageSize
-sizeB8 = PdfPageSize 175.75 249.45
-sizeB9 :: PdfPageSize
-sizeB9 = PdfPageSize 124.72 175.75
-sizeB10 :: PdfPageSize
-sizeB10 = PdfPageSize 87.87 124.72
-sizeC0 :: PdfPageSize
-sizeC0 = PdfPageSize 2599.37 3676.54
-sizeC1 :: PdfPageSize
-sizeC1 = PdfPageSize 1836.85 2599.37
-sizeC2 :: PdfPageSize
-sizeC2 = PdfPageSize 1298.27 1836.85
-sizeC3 :: PdfPageSize
-sizeC3 = PdfPageSize 918.43 1298.27
-sizeC4 :: PdfPageSize
-sizeC4 = PdfPageSize 649.13 918.43
-sizeC5 :: PdfPageSize
-sizeC5 = PdfPageSize 459.21 649.13
-sizeC6 :: PdfPageSize
-sizeC6 = PdfPageSize 323.15 459.21
-sizeC7 :: PdfPageSize
-sizeC7 = PdfPageSize 229.61 323.15
-sizeC8 :: PdfPageSize
-sizeC8 = PdfPageSize 161.57 229.61
-sizeC9 :: PdfPageSize
-sizeC9 = PdfPageSize 113.39 161.57
-sizeC10 :: PdfPageSize
-sizeC10 = PdfPageSize 79.37 113.39
-sizeRA0 :: PdfPageSize
-sizeRA0 = PdfPageSize 2437.80 3458.27
-sizeRA1 :: PdfPageSize
-sizeRA1 = PdfPageSize 1729.13 2437.80
-sizeRA2 :: PdfPageSize
-sizeRA2 = PdfPageSize 1218.90 1729.13
-sizeRA3 :: PdfPageSize
-sizeRA3 = PdfPageSize 864.57 1218.90
-sizeRA4 :: PdfPageSize
-sizeRA4 = PdfPageSize 609.45 864.57
-sizeSRA0 :: PdfPageSize
-sizeSRA0 = PdfPageSize 2551.18 3628.35
-sizeSRA1 :: PdfPageSize
-sizeSRA1 = PdfPageSize 1814.17 2551.18
-sizeSRA2 :: PdfPageSize
-sizeSRA2 = PdfPageSize 1275.59 1814.17
-sizeSRA3 :: PdfPageSize
-sizeSRA3 = PdfPageSize 907.09 1275.59
-sizeSRA4 :: PdfPageSize
-sizeSRA4 = PdfPageSize 637.80 907.09
-sizeEXECUTIVE :: PdfPageSize
-sizeEXECUTIVE = PdfPageSize 521.86 756.00
-sizeFOLIO :: PdfPageSize
-sizeFOLIO = PdfPageSize 612.00 936.00
-sizeLEGAL :: PdfPageSize
-sizeLEGAL = PdfPageSize 612.00 1008.00
-sizeLETTER :: PdfPageSize
-sizeLETTER = PdfPageSize 612.00 792.00
-sizeTABLOID :: PdfPageSize
-sizeTABLOID = PdfPageSize 792.00 1224.00
+s4A0 :: PdfPageSize
+s4A0 = PdfPageSize 4767.87 6740.79
+s2A0 :: PdfPageSize
+s2A0 = PdfPageSize 3370.39 4767.87
+sA0 :: PdfPageSize
+sA0 = PdfPageSize 2383.94 3370.39
+sA1 :: PdfPageSize
+sA1 = PdfPageSize 1683.78 2383.94
+sA2 :: PdfPageSize
+sA2 = PdfPageSize 1190.55 1683.78
+sA3 :: PdfPageSize
+sA3 = PdfPageSize 841.89 1190.55
+sA4 :: PdfPageSize
+sA4 = PdfPageSize 595.28 841.89
+sA5 :: PdfPageSize
+sA5 = PdfPageSize 419.53 595.28
+sA6 :: PdfPageSize
+sA6 = PdfPageSize 297.64 419.53
+sA7 :: PdfPageSize
+sA7 = PdfPageSize 209.76 297.64
+sA8 :: PdfPageSize
+sA8 = PdfPageSize 147.40 209.76
+sA9 :: PdfPageSize
+sA9 = PdfPageSize 104.88 147.40
+sA10 :: PdfPageSize
+sA10 = PdfPageSize 73.70 104.88
+sB0 :: PdfPageSize
+sB0 = PdfPageSize 2834.65 4008.19
+sB1 :: PdfPageSize
+sB1 = PdfPageSize 2004.09 2834.65
+sB2 :: PdfPageSize
+sB2 = PdfPageSize 1417.32 2004.09
+sB3 :: PdfPageSize
+sB3 = PdfPageSize 1000.63 1417.32
+sB4 :: PdfPageSize
+sB4 = PdfPageSize 708.66 1000.63
+sB5 :: PdfPageSize
+sB5 = PdfPageSize 498.90 708.66
+sB6 :: PdfPageSize
+sB6 = PdfPageSize 354.33 498.90
+sB7 :: PdfPageSize
+sB7 = PdfPageSize 249.45 354.33
+sB8 :: PdfPageSize
+sB8 = PdfPageSize 175.75 249.45
+sB9 :: PdfPageSize
+sB9 = PdfPageSize 124.72 175.75
+sB10 :: PdfPageSize
+sB10 = PdfPageSize 87.87 124.72
+sC0 :: PdfPageSize
+sC0 = PdfPageSize 2599.37 3676.54
+sC1 :: PdfPageSize
+sC1 = PdfPageSize 1836.85 2599.37
+sC2 :: PdfPageSize
+sC2 = PdfPageSize 1298.27 1836.85
+sC3 :: PdfPageSize
+sC3 = PdfPageSize 918.43 1298.27
+sC4 :: PdfPageSize
+sC4 = PdfPageSize 649.13 918.43
+sC5 :: PdfPageSize
+sC5 = PdfPageSize 459.21 649.13
+sC6 :: PdfPageSize
+sC6 = PdfPageSize 323.15 459.21
+sC7 :: PdfPageSize
+sC7 = PdfPageSize 229.61 323.15
+sC8 :: PdfPageSize
+sC8 = PdfPageSize 161.57 229.61
+sC9 :: PdfPageSize
+sC9 = PdfPageSize 113.39 161.57
+sC10 :: PdfPageSize
+sC10 = PdfPageSize 79.37 113.39
+sRA0 :: PdfPageSize
+sRA0 = PdfPageSize 2437.80 3458.27
+sRA1 :: PdfPageSize
+sRA1 = PdfPageSize 1729.13 2437.80
+sRA2 :: PdfPageSize
+sRA2 = PdfPageSize 1218.90 1729.13
+sRA3 :: PdfPageSize
+sRA3 = PdfPageSize 864.57 1218.90
+sRA4 :: PdfPageSize
+sRA4 = PdfPageSize 609.45 864.57
+sSRA0 :: PdfPageSize
+sSRA0 = PdfPageSize 2551.18 3628.35
+sSRA1 :: PdfPageSize
+sSRA1 = PdfPageSize 1814.17 2551.18
+sSRA2 :: PdfPageSize
+sSRA2 = PdfPageSize 1275.59 1814.17
+sSRA3 :: PdfPageSize
+sSRA3 = PdfPageSize 907.09 1275.59
+sSRA4 :: PdfPageSize
+sSRA4 = PdfPageSize 637.80 907.09
+sExecutive :: PdfPageSize
+sExecutive = PdfPageSize 521.86 756.00
+sFolio :: PdfPageSize
+sFolio = PdfPageSize 612.00 936.00
+sLegal :: PdfPageSize
+sLegal = PdfPageSize 612.00 1008.00
+sLetter :: PdfPageSize
+sLetter = PdfPageSize 612.00 792.00
+sTabloid :: PdfPageSize
+sTabloid = PdfPageSize 792.00 1224.00
 
 -----------------------------------------------
 
@@ -550,34 +550,34 @@ instance ToJSON PdfStandardFont where
     , "encoding" .= pdfStandardFontEncoding o
     ]
 
-fontCourier :: PdfStandardFont
-fontCourier = PdfStandardFont "Courier" "Type1" "WinAnsiEncoding"
-fontCourierBold :: PdfStandardFont
-fontCourierBold = PdfStandardFont "Courier-Bold" "Type1" "WinAnsiEncoding"
-fontCourierOblique :: PdfStandardFont
-fontCourierOblique = PdfStandardFont "Courier-Oblique" "Type1" "WinAnsiEncoding"
-fontCourierBoldOblique :: PdfStandardFont
-fontCourierBoldOblique = PdfStandardFont "Courier-BoldOblique" "Type1" "WinAnsiEncoding"
-fontHelvetica :: PdfStandardFont
-fontHelvetica = PdfStandardFont "Helvetica" "Type1" "WinAnsiEncoding"
-fontHelveticaBold :: PdfStandardFont
-fontHelveticaBold = PdfStandardFont "Helvetica-Bold" "Type1" "WinAnsiEncoding"
-fontHelveticaOblique :: PdfStandardFont
-fontHelveticaOblique = PdfStandardFont "Helvetica-Oblique" "Type1" "WinAnsiEncoding"
-fontHelveticaBoldOblique :: PdfStandardFont
-fontHelveticaBoldOblique = PdfStandardFont "Helvetica-BoldOblique" "Type1" "WinAnsiEncoding"
-fontTimesRoman :: PdfStandardFont
-fontTimesRoman = PdfStandardFont "Times-Roman" "Type1" "WinAnsiEncoding"
-fontTimesBold :: PdfStandardFont
-fontTimesBold = PdfStandardFont "Times-Bold" "Type1" "WinAnsiEncoding"
-fontTimesItalic :: PdfStandardFont
-fontTimesItalic = PdfStandardFont "Times-Italic" "Type1" "WinAnsiEncoding"
-fontTimesBoldItalic :: PdfStandardFont
-fontTimesBoldItalic = PdfStandardFont "Times-BoldItalic" "Type1" "WinAnsiEncoding"
-fontSymbol :: PdfStandardFont
-fontSymbol = PdfStandardFont "Symbol" "Type1" "WinAnsiEncoding"
-fontZapfDingbats :: PdfStandardFont
-fontZapfDingbats = PdfStandardFont "ZapfDingbats" "Type1" "WinAnsiEncoding"
+courier :: PdfStandardFont
+courier = PdfStandardFont "Courier" "Type1" "WinAnsiEncoding"
+courierBold :: PdfStandardFont
+courierBold = PdfStandardFont "Courier-Bold" "Type1" "WinAnsiEncoding"
+courierOblique :: PdfStandardFont
+courierOblique = PdfStandardFont "Courier-Oblique" "Type1" "WinAnsiEncoding"
+courierBoldOblique :: PdfStandardFont
+courierBoldOblique = PdfStandardFont "Courier-BoldOblique" "Type1" "WinAnsiEncoding"
+helvetica :: PdfStandardFont
+helvetica = PdfStandardFont "Helvetica" "Type1" "WinAnsiEncoding"
+helveticaBold :: PdfStandardFont
+helveticaBold = PdfStandardFont "Helvetica-Bold" "Type1" "WinAnsiEncoding"
+helveticaOblique :: PdfStandardFont
+helveticaOblique = PdfStandardFont "Helvetica-Oblique" "Type1" "WinAnsiEncoding"
+helveticaBoldOblique :: PdfStandardFont
+helveticaBoldOblique = PdfStandardFont "Helvetica-BoldOblique" "Type1" "WinAnsiEncoding"
+timesRoman :: PdfStandardFont
+timesRoman = PdfStandardFont "Times-Roman" "Type1" "WinAnsiEncoding"
+timesBold :: PdfStandardFont
+timesBold = PdfStandardFont "Times-Bold" "Type1" "WinAnsiEncoding"
+timesItalic :: PdfStandardFont
+timesItalic = PdfStandardFont "Times-Italic" "Type1" "WinAnsiEncoding"
+timesBoldItalic :: PdfStandardFont
+timesBoldItalic = PdfStandardFont "Times-BoldItalic" "Type1" "WinAnsiEncoding"
+symbol :: PdfStandardFont
+symbol = PdfStandardFont "Symbol" "Type1" "WinAnsiEncoding"
+zapfDingbats :: PdfStandardFont
+zapfDingbats = PdfStandardFont "ZapfDingbats" "Type1" "WinAnsiEncoding"
 
 currentFont :: PdfDocument -> Maybe PdfFont
 currentFont pdfDoc =
@@ -771,7 +771,7 @@ instance IsExecutableAction Action where
             ++
             [ PdfPage
               { pdfPageObjId = pageObjId
-              , pdfPageSize = sizeA4
+              , pdfPageSize = sA4
               , pdfPageMargins = defaultPageMargins
               , pdfPageLayout = Portrait
               , pdfPageResources =
