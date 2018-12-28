@@ -10,6 +10,21 @@ import qualified Data.Text as T
 import qualified Data.Maybe as M
 import qualified Data.ByteString.Char8 as B8
 import Handler.Graphics.PDFKit.Helpers
+import Handler.Graphics.PDFKit.AfmFont.AfmFont
+import Handler.Graphics.PDFKit.AfmFont.Courier
+import Handler.Graphics.PDFKit.AfmFont.CourierBold
+import Handler.Graphics.PDFKit.AfmFont.CourierOblique
+import Handler.Graphics.PDFKit.AfmFont.CourierBoldOblique
+import Handler.Graphics.PDFKit.AfmFont.Helvetica
+import Handler.Graphics.PDFKit.AfmFont.HelveticaBold
+import Handler.Graphics.PDFKit.AfmFont.HelveticaOblique
+import Handler.Graphics.PDFKit.AfmFont.HelveticaBoldOblique
+import Handler.Graphics.PDFKit.AfmFont.TimesRoman
+import Handler.Graphics.PDFKit.AfmFont.TimesBold
+import Handler.Graphics.PDFKit.AfmFont.TimesItalic
+import Handler.Graphics.PDFKit.AfmFont.TimesBoldItalic
+import Handler.Graphics.PDFKit.AfmFont.Symbol
+import Handler.Graphics.PDFKit.AfmFont.ZapfDingbats
 
 data PdfDocument = PdfDocument
   { pdfDocumentVersion :: Text
@@ -562,6 +577,7 @@ data PdfStandardFont = PdfStandardFont
   { pdfStandardFontBaseFont :: Text
   , pdfStandardFontSubtype :: Text
   , pdfStandardFontEncoding :: Text
+  , pdfStandardFontAfmFont :: AfmFont
   }
   deriving Eq
 
@@ -576,33 +592,33 @@ defaultFont :: PdfStandardFont
 defaultFont = helvetica
 
 courier :: PdfStandardFont
-courier = PdfStandardFont "Courier" "Type1" "WinAnsiEncoding"
+courier = PdfStandardFont "Courier" "Type1" "WinAnsiEncoding" afmFontCourier
 courierBold :: PdfStandardFont
-courierBold = PdfStandardFont "Courier-Bold" "Type1" "WinAnsiEncoding"
+courierBold = PdfStandardFont "Courier-Bold" "Type1" "WinAnsiEncoding" afmFontCourierBold
 courierOblique :: PdfStandardFont
-courierOblique = PdfStandardFont "Courier-Oblique" "Type1" "WinAnsiEncoding"
+courierOblique = PdfStandardFont "Courier-Oblique" "Type1" "WinAnsiEncoding" afmFontCourierOblique
 courierBoldOblique :: PdfStandardFont
-courierBoldOblique = PdfStandardFont "Courier-BoldOblique" "Type1" "WinAnsiEncoding"
+courierBoldOblique = PdfStandardFont "Courier-BoldOblique" "Type1" "WinAnsiEncoding" afmFontCourierBoldOblique
 helvetica :: PdfStandardFont
-helvetica = PdfStandardFont "Helvetica" "Type1" "WinAnsiEncoding"
+helvetica = PdfStandardFont "Helvetica" "Type1" "WinAnsiEncoding" afmFontHelvetica
 helveticaBold :: PdfStandardFont
-helveticaBold = PdfStandardFont "Helvetica-Bold" "Type1" "WinAnsiEncoding"
+helveticaBold = PdfStandardFont "Helvetica-Bold" "Type1" "WinAnsiEncoding" afmFontHelveticaBold
 helveticaOblique :: PdfStandardFont
-helveticaOblique = PdfStandardFont "Helvetica-Oblique" "Type1" "WinAnsiEncoding"
+helveticaOblique = PdfStandardFont "Helvetica-Oblique" "Type1" "WinAnsiEncoding" afmFontHelveticaOblique
 helveticaBoldOblique :: PdfStandardFont
-helveticaBoldOblique = PdfStandardFont "Helvetica-BoldOblique" "Type1" "WinAnsiEncoding"
+helveticaBoldOblique = PdfStandardFont "Helvetica-BoldOblique" "Type1" "WinAnsiEncoding" afmFontHelveticaBoldOblique
 timesRoman :: PdfStandardFont
-timesRoman = PdfStandardFont "Times-Roman" "Type1" "WinAnsiEncoding"
+timesRoman = PdfStandardFont "Times-Roman" "Type1" "WinAnsiEncoding" afmFontTimesRoman
 timesBold :: PdfStandardFont
-timesBold = PdfStandardFont "Times-Bold" "Type1" "WinAnsiEncoding"
+timesBold = PdfStandardFont "Times-Bold" "Type1" "WinAnsiEncoding" afmFontTimesBold
 timesItalic :: PdfStandardFont
-timesItalic = PdfStandardFont "Times-Italic" "Type1" "WinAnsiEncoding"
+timesItalic = PdfStandardFont "Times-Italic" "Type1" "WinAnsiEncoding" afmFontTimesItalic
 timesBoldItalic :: PdfStandardFont
-timesBoldItalic = PdfStandardFont "Times-BoldItalic" "Type1" "WinAnsiEncoding"
+timesBoldItalic = PdfStandardFont "Times-BoldItalic" "Type1" "WinAnsiEncoding" afmFontTimesBoldItalic
 symbol :: PdfStandardFont
-symbol = PdfStandardFont "Symbol" "Type1" "WinAnsiEncoding"
+symbol = PdfStandardFont "Symbol" "Type1" "WinAnsiEncoding" afmFontSymbol
 zapfDingbats :: PdfStandardFont
-zapfDingbats = PdfStandardFont "ZapfDingbats" "Type1" "WinAnsiEncoding"
+zapfDingbats = PdfStandardFont "ZapfDingbats" "Type1" "WinAnsiEncoding" afmFontZapfDingbats
 
 currentFont :: PdfDocument -> Maybe PdfFont
 currentFont pdfDoc =
