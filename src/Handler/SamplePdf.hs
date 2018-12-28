@@ -8,6 +8,22 @@ import Data.Time
 import Handler.Graphics.PDFKit.PDFKit
 import Handler.Graphics.PDFKit.Pdf
 
+samplePdfDoc :: Handler PdfDocument
+samplePdfDoc = do
+  timeZone <- liftIO getCurrentTimeZone
+  now <- liftIO getCurrentTime
+  return $ buildPdfDoc now timeZone $ do
+    producer "sample producer"
+    creator "sample creator"
+    page
+      >> pageSize sLetter
+      >> pageLayout portrait
+    font courierBold
+    textAt "x:100 y:100" 100 100
+    fontSize 12
+    font courier
+    textAt "x:100 y:200" 100 200
+
 getSamplePdfJsonR :: Handler Value
 getSamplePdfJsonR = do
   pdfDoc <- samplePdfDoc
@@ -30,19 +46,3 @@ getSamplePdfDownloadR = do
   addHeader "Content-Disposition" $
     T.concat ["attachment; filename=\"", "samplepdf.pdf", "\""]
   respond (encodeUtf8 "application/pdf") $ encodePdf pdfDoc
-
-samplePdfDoc :: Handler PdfDocument
-samplePdfDoc = do
-  timeZone <- liftIO getCurrentTimeZone
-  now <- liftIO getCurrentTime
-  return $ buildPdfDoc now timeZone $ do
-    producer "sample producer"
-    creator "sample creator"
-    page
-      >> pageSize sLetter
-      >> pageLayout portrait
-    font courierBold
-    text "x:100 y:100" 100 100
-    fontSize 12
-    font courier
-    text "x:100 y:200" 100 200

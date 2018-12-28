@@ -704,7 +704,7 @@ data Action =
   | ActionPageSetMargin Double
   | ActionPageSetMargins Double Double Double Double
   | ActionPageSetSizeCustom Double Double
-  | ActionText Text Double Double
+  | ActionTextAt Text Double Double
 
 build :: Action -> PdfBuilder
 build action = PdfBuilderM () [action]
@@ -872,7 +872,7 @@ instance IsExecutableAction Action where
     where
       (pdfPages, initPages, lastPage) = pdfPagesTuple pdfDoc
 
-  execute (ActionText t x y) pdfDoc =
+  execute (ActionTextAt t x y) pdfDoc =
     pdfDoc
     { pdfDocumentPages =
         pdfPages
