@@ -294,15 +294,13 @@ instance ToByteStringLines (PdfPage, PdfDocument) where
     , encodeUtf8 $ "/Parent " ++ (ref $ pdfPagesObjId $ pdfDocumentPages pdfDoc)
     , encodeUtf8 $ "% " ++ (pack $ show $ pdfPageLayout pdfPage)
     , encodeUtf8 $ "/MediaBox [0 0 "
-      ++ (doubleToText $ pdfPageSizeWidth pageSize) ++ " "
-      ++ (doubleToText $ pdfPageSizeHeight pageSize) ++ "]"
+      ++ (doubleToText $ pdfPageSizeWidth $ pdfPageSize pdfPage) ++ " "
+      ++ (doubleToText $ pdfPageSizeHeight $ pdfPageSize pdfPage) ++ "]"
     , encodeUtf8 $ "/Resources " ++ (ref $ pdfResourcesObjId $ pdfPageResources pdfPage)
     , encodeUtf8 $ "/Contents " ++ (ref $ pdfContentsObjId $ pdfPageContents pdfPage)
     , encodeUtf8 ">>"
     , encodeUtf8 "endobj"
     ]
-    where
-      pageSize = applyLayout (pdfPageSize pdfPage) (pdfPageLayout pdfPage)
 
 -----------------------------------------------
 
@@ -696,10 +694,11 @@ pdfPagesTuple pdfDoc = (pdfPages, initPages, lastPage)
 
 applyLayout :: PdfPageSize -> PdfPageLayout -> PdfPageSize
 applyLayout size Portrait = size
-applyLayout (PdfPageSize {pdfPageSizeWidth = w, pdfPageSizeHeight = h }) Landscape =
-  PdfPageSize { pdfPageSizeWidth = h
-              , pdfPageSizeHeight = w
-              }
+applyLayout (PdfPageSize w h ) Landscape =
+  PdfPageSize
+  { pdfPageSizeWidth = h
+  , pdfPageSizeHeight = w
+  }
 
 pdfDocumentByteStringLineBlocks :: PdfDocument -> ([ByteString], [[ByteString]], [ByteString])
 pdfDocumentByteStringLineBlocks pdfDoc =
@@ -891,11 +890,16 @@ instance IsExecutableAction Action where
         { pdfPagesKids =
           initPages
           ++
-          [ lastPage { pdfPageLayout = lay } ]
+          [ lastPage
+            { pdfPageLayout = lay
+            , pdfPageSize = pageSize
+            }
+          ]
         }
     }
     where
       (pdfPages, initPages, lastPage) = pdfPagesTuple pdfDoc
+      pageSize = applyLayout (pdfPageSize lastPage) lay
 
   execute (ActionPageSetMargin x) pdfDoc =
     pdfDoc

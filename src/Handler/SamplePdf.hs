@@ -16,18 +16,20 @@ samplePdfDoc = do
     producer "sample producer"
     creator "sample creator"
     page
-      >> pageSize sLetter
+      >> pageSize sA4
       >> pageLayout portrait
     font courierBold
+    text "default x y"
     text "foo ATyg"
     text "bar ATyg"
     text "baz ATyg"
+    font timesRoman
     textAt "x:300 y:100" 300 100
     text "foo2 ATyg"
     text "bar2 ATyg"
     fontSize 12
     font helveticaOblique
-    textAt "x:300 y:300" 300 300
+    textAt "x:300 y:200" 300 200
     text "foo3 ATyg"
     text "bar3 ATyg"
 
