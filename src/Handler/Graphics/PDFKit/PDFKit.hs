@@ -42,6 +42,16 @@ textAt :: Text -> Double -> Double -> PdfBuilder
 textAt t x y = do
   build ActionFontAddIfMissing
   build $ ActionTextAt t x y
+  build ActionMoveDown
+
+text :: Text -> PdfBuilder
+text t = do
+  build ActionFontAddIfMissing
+  build $ ActionText t
+  build ActionMoveDown
+
+moveDown :: PdfBuilder
+moveDown = build ActionMoveDown
 
 -----------------------------------------------
 
