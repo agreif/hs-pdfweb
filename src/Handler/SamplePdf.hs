@@ -17,19 +17,19 @@ samplePdfDoc = do
     creator "sample creator"
     page
       >> pageSize sA4
-      >> pageLayout portrait
-    font courierBold
+      >> layout portrait
     text "default x y"
     text "foo ATyg"
+    font courierBold
     text "bar ATyg"
     text "baz ATyg"
-    font timesRoman
     textAt "x:300 y:100" 300 100
+    font timesRoman
     text "foo2 ATyg"
     text "bar2 ATyg"
+    textAt "x:300 y:200" 300 200
     fontSize 12
     font helveticaOblique
-    textAt "x:300 y:200" 300 200
     text "foo3 ATyg"
     text "bar3 ATyg"
 

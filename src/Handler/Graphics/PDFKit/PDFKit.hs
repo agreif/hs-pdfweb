@@ -29,8 +29,8 @@ pageSize = build . ActionPageSetSize
 pageSizeCustom :: Double -> Double -> PdfBuilder
 pageSizeCustom w h = build $ ActionPageSetSizeCustom w h
 
-pageLayout :: PdfPageLayout -> PdfBuilder
-pageLayout = build . ActionPageSetLayout
+layout :: PdfPageLayout -> PdfBuilder
+layout = build . ActionPageSetLayout
 
 pageMargin :: Double -> PdfBuilder
 pageMargin = build . ActionPageSetMargin
@@ -40,15 +40,15 @@ pageMargins t l b r = build $ ActionPageSetMargins t l b r
 
 textAt :: Text -> Double -> Double -> PdfBuilder
 textAt t x y = do
+  build ActionMoveDown
   build ActionFontAddIfMissing
   build $ ActionTextAt t x y
-  build ActionMoveDown
 
 text :: Text -> PdfBuilder
 text t = do
+  build ActionMoveDown
   build ActionFontAddIfMissing
   build $ ActionText t
-  build ActionMoveDown
 
 moveDown :: PdfBuilder
 moveDown = build ActionMoveDown
