@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Handler.Graphics.PDFKit.Font.HelveticaOblique where
+module Handler.Graphics.PDFKit.AfmFont.HelveticaOblique where
 
-import Handler.Graphics.PDFKit.Font.AfmFont
+import Handler.Graphics.PDFKit.AfmFont.AfmFont
 
 afmFontHelveticaOblique :: AfmFont
 afmFontHelveticaOblique = AfmFont

@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Handler.Graphics.PDFKit.Font.CourierBold where
+module Handler.Graphics.PDFKit.AfmFont.CourierBold where
 
-import Handler.Graphics.PDFKit.Font.AfmFont
+import Handler.Graphics.PDFKit.AfmFont.AfmFont
 
 afmFontCourierBold :: AfmFont
 afmFontCourierBold = AfmFont

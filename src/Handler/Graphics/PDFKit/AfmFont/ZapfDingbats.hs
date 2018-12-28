@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Handler.Graphics.PDFKit.Font.ZapfDingbats where
+module Handler.Graphics.PDFKit.AfmFont.ZapfDingbats where
 
-import Handler.Graphics.PDFKit.Font.AfmFont
+import Handler.Graphics.PDFKit.AfmFont.AfmFont
 
 afmFontZapfDingbats :: AfmFont
 afmFontZapfDingbats = AfmFont

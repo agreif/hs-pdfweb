@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Handler.Graphics.PDFKit.Font.Symbol where
+module Handler.Graphics.PDFKit.AfmFont.Symbol where
 
-import Handler.Graphics.PDFKit.Font.AfmFont
+import Handler.Graphics.PDFKit.AfmFont.AfmFont
 
 afmFontSymbol :: AfmFont
 afmFontSymbol = AfmFont

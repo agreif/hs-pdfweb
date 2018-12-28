@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Handler.Graphics.PDFKit.Font.TimesItalic where
+module Handler.Graphics.PDFKit.AfmFont.TimesItalic where
 
-import Handler.Graphics.PDFKit.Font.AfmFont
+import Handler.Graphics.PDFKit.AfmFont.AfmFont
 
 afmFontTimesItalic :: AfmFont
 afmFontTimesItalic = AfmFont
