@@ -19,10 +19,17 @@ samplePdfDoc = do
       >> pageSize sLetter
       >> pageLayout portrait
     font courierBold
-    textAt "x:100 y:100" 100 100
+    text "foo ATyg"
+    text "bar ATyg"
+    text "baz ATyg"
+    textAt "x:300 y:100" 300 100
+    text "foo2 ATyg"
+    text "bar2 ATyg"
     fontSize 12
-    font courier
-    textAt "x:100 y:200" 100 200
+    font helveticaOblique
+    textAt "x:300 y:300" 300 300
+    text "foo3 ATyg"
+    text "bar3 ATyg"
 
 getSamplePdfJsonR :: Handler Value
 getSamplePdfJsonR = do
