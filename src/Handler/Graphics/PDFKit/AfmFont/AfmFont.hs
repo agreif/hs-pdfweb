@@ -1,4 +1,4 @@
-module Handler.Graphics.PDFKit.Font.AfmFont where
+module Handler.Graphics.PDFKit.AfmFont.AfmFont where
 
 import Import
 
