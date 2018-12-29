@@ -660,13 +660,13 @@ currentPdfFontId pdfDoc =
 
 -----------------------------------------------
 
-class ToByteStringLines b where
-  toByteStringLines :: b -> [ByteString]
+class ToByteStringLines a where
+  toByteStringLines :: a -> [ByteString]
 
 class IsExecutableAction a where
   execute :: a -> PdfDocument -> PdfDocument
 
-data PdfBuilderM b = PdfBuilderM b [Action]
+data PdfBuilderM a = PdfBuilderM a [Action]
 
 type PdfBuilder = PdfBuilderM ()
 
@@ -678,10 +678,10 @@ instance Applicative PdfBuilderM where
   (<*>) = ap
 
 instance Monad PdfBuilderM where
-  return b = PdfBuilderM b []
-  PdfBuilderM b actions1 >>= f =
-    let PdfBuilderM b2 actions2 = f b
-    in  PdfBuilderM b2 (actions1 ++ actions2)
+  return a = PdfBuilderM a []
+  PdfBuilderM a actions1 >>= f =
+    let PdfBuilderM b actions2 = f a
+    in  PdfBuilderM b (actions1 ++ actions2)
 
 -----------------------------------------------
 

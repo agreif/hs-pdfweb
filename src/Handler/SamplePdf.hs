@@ -17,7 +17,7 @@ samplePdfDoc = do
     creator "sample creator"
     page
       >> pageSize sA4
-      >> layout portrait
+      >> layout landscape
     text "default x y"
     text "foo ATyg"
     font courierBold
