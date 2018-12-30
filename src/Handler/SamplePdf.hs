@@ -32,6 +32,11 @@ samplePdfDoc = do
       font helveticaOblique
       text "foo3 ATyg"
       text "bar3 ATyg"
+    page $ do
+      pageSize sA5
+      layout portrait
+      text "default x y"
+      text "foo ATyg"
 
 getSamplePdfJsonR :: Handler Value
 getSamplePdfJsonR = do
