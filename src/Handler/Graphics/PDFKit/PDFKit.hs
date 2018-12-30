@@ -56,7 +56,7 @@ moveDown = build ActionMoveDown
 -----------------------------------------------
 
 buildPdfDoc :: UTCTime -> TimeZone -> PdfBuilderM b -> PdfDocument
-buildPdfDoc now timeZone (PdfBuilderM _ userActions) =
+buildPdfDoc now timeZone (PdfBuilderM userActions _) =
   L.foldl
   (\pdfDoc action -> execute action pdfDoc)
   (initialPdfDocument now timeZone)

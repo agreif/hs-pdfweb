@@ -26,6 +26,31 @@ import Handler.Graphics.PDFKit.AfmFont.TimesBoldItalic
 import Handler.Graphics.PDFKit.AfmFont.Symbol
 import Handler.Graphics.PDFKit.AfmFont.ZapfDingbats
 
+class ToByteStringLines a where
+  toByteStringLines :: a -> [ByteString]
+
+class IsExecutableAction a where
+  execute :: a -> PdfDocument -> PdfDocument
+
+data PdfBuilderM a = PdfBuilderM [Action] a
+
+type PdfBuilder = PdfBuilderM ()
+
+instance Functor PdfBuilderM where
+  fmap = liftM
+
+instance Applicative PdfBuilderM where
+  pure  = return
+  (<*>) = ap
+
+instance Monad PdfBuilderM where
+  return a = PdfBuilderM [] a
+  PdfBuilderM actions1 a >>= f =
+    let PdfBuilderM actions2 b = f a
+    in  PdfBuilderM (actions1 ++ actions2) b
+
+-----------------------------------------------
+
 data PdfDocument = PdfDocument
   { pdfDocumentVersion :: Text
   , pdfDocumentHeaderLines :: [ByteString]
@@ -660,31 +685,6 @@ currentPdfFontId pdfDoc =
 
 -----------------------------------------------
 
-class ToByteStringLines a where
-  toByteStringLines :: a -> [ByteString]
-
-class IsExecutableAction a where
-  execute :: a -> PdfDocument -> PdfDocument
-
-data PdfBuilderM a = PdfBuilderM a [Action]
-
-type PdfBuilder = PdfBuilderM ()
-
-instance Functor PdfBuilderM where
-  fmap = liftM
-
-instance Applicative PdfBuilderM where
-  pure  = return
-  (<*>) = ap
-
-instance Monad PdfBuilderM where
-  return a = PdfBuilderM a []
-  PdfBuilderM a actions1 >>= f =
-    let PdfBuilderM b actions2 = f a
-    in  PdfBuilderM b (actions1 ++ actions2)
-
------------------------------------------------
-
 pdfPagesTuple :: PdfDocument -> (PdfPages, [PdfPage], PdfPage)
 pdfPagesTuple pdfDoc = (pdfPages, initPages, lastPage)
   where
@@ -752,7 +752,7 @@ data Action =
   | ActionMoveDown
 
 build :: Action -> PdfBuilder
-build action = PdfBuilderM () [action]
+build action = PdfBuilderM [action] ()
 
 -----------------------------------------------
 
