@@ -366,8 +366,8 @@ instance ToJSON PdfContents where
     , "texts" .= pdfContentsTexts o
     ]
 
-instance ToByteStringLines (PdfContents, PdfPage) where
-  toByteStringLines (pdfContents, pdfPage) =
+instance ToByteStringLines (PdfContents, PdfPage, PdfDocument) where
+  toByteStringLines (pdfContents, pdfPage, pdfDoc) =
     [ encodeUtf8 $ (pack $ show $ pdfContentsObjId pdfContents) ++ " 0 obj"
     , encodeUtf8 $ "% ------------------------------------------------------ Contents " ++ (intToText $ pdfContentsObjId pdfContents)
     , encodeUtf8 "<<"
@@ -392,7 +392,7 @@ instance ToByteStringLines (PdfContents, PdfPage) where
            , translateOrigin
            , "BT"
            , translatePos pdfText
-           , "/" ++ ( case pdfTextFont pdfText of
+           , "/" ++ ( case findPdfFont (pdfTextStandardFont pdfText) pdfDoc of
                         Just pdfFont -> pdfFontName pdfFont
                         _ -> ""
                     ) ++ " " ++ (doubleToText $ pdfTextFontSize pdfText) ++ " Tf"
@@ -417,7 +417,6 @@ data PdfText = PdfText
   , pdfTextX :: Double
   , pdfTextY :: Double
   , pdfTextStandardFont :: PdfStandardFont
-  , pdfTextFont :: Maybe PdfFont
   , pdfTextFontSize :: Double
   }
 
@@ -427,7 +426,6 @@ instance ToJSON PdfText where
     , "x" .= pdfTextX o
     , "y" .= pdfTextY o
     , "standardFont" .= pdfTextStandardFont o
-    , "font" .= pdfTextFont o
     , "fontSize" .= pdfTextFontSize o
     ]
 
@@ -719,11 +717,15 @@ symbol = PdfStandardFont "Symbol" "Type1" "WinAnsiEncoding" afmFontSymbol
 zapfDingbats :: PdfStandardFont
 zapfDingbats = PdfStandardFont "ZapfDingbats" "Type1" "WinAnsiEncoding" afmFontZapfDingbats
 
+findPdfFont :: PdfStandardFont -> PdfDocument -> Maybe PdfFont
+findPdfFont stdFont pdfDoc =
+  L.find
+  (\pdfFont -> pdfFontStandardFont pdfFont == stdFont)
+  (pdfDocumentFonts pdfDoc)
+
 currentPdfFont :: PdfDocument -> Maybe PdfFont
 currentPdfFont pdfDoc =
-  L.find
-  (\pdfFont -> pdfFontStandardFont pdfFont == pdfPageCurrentFont lastPage)
-  (pdfDocumentFonts pdfDoc)
+  findPdfFont (pdfPageCurrentFont lastPage) pdfDoc
   where
     (_, _, lastPage) = pdfPagesTuple pdfDoc
 
@@ -764,7 +766,7 @@ pdfDocumentByteStringLineBlocks pdfDoc =
       (\acc pdfPage ->
           [ toByteStringLines (pdfPage, pdfDoc)
           , toByteStringLines $ pdfPageResources pdfPage
-          , toByteStringLines (pdfPageContents pdfPage, pdfPage)
+          , toByteStringLines (pdfPageContents pdfPage, pdfPage, pdfDoc)
           ]
           ++ acc
       )
@@ -1035,7 +1037,6 @@ instance IsExecutableAction Action where
                       , pdfTextX = x
                       , pdfTextY = y
                       , pdfTextStandardFont = pdfPageCurrentFont lastPage
-                      , pdfTextFont = currentPdfFont pdfDoc
                       , pdfTextFontSize = pdfPageCurrentFontSize lastPage
                       }
                   ]
