@@ -653,13 +653,19 @@ instance ToJSON PdfStandardFont where
     ]
 
 fontLineHeight :: PdfStandardFont -> Double -> Double
-fontLineHeight stdFont size = case (M.isJust ascender, M.isJust ascender) of
-  (True, True) -> ((M.fromJust ascender) - (M.fromJust descender)) / 1000 * size
-  _ -> 0
+fontLineHeight stdFont size =
+  case (maybeAscender, maybeDescender) of
+    (Just ascender, Just descender) -> (ascender + lineGap - descender) / 1000 * size
+    _ -> 0
   where
     afmFont = pdfStandardFontAfmFont stdFont
-    ascender = afmFontAscender afmFont
-    descender = afmFontDescender afmFont
+    maybeAscender = afmFontAscender afmFont
+    maybeDescender = afmFontDescender afmFont
+    lineGap = case (maybeAscender, maybeDescender) of
+      (Just asce, Just desce) -> top - bottom - (asce - desce);
+      _ -> 0
+    (top, bottom) = let (_, b, _, t) = afmFontFontBBox afmFont
+                    in (t, b)
 
 currentLineHeight :: PdfPage -> Double
 currentLineHeight pdfPage =
@@ -667,7 +673,6 @@ currentLineHeight pdfPage =
 
 defaultFont :: PdfStandardFont
 defaultFont = helvetica
-
 
 defaultFontSize :: Double
 defaultFontSize = 24
