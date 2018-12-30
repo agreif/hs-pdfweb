@@ -16,8 +16,8 @@ samplePdfDoc = do
     producer "sample producer"
     creator "sample creator"
     page
-      >> pageSize sA4
-      >> layout landscape
+    pageSize sA4
+    layout landscape
     text "default x y"
     text "foo ATyg"
     font courierBold
