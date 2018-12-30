@@ -26,28 +26,57 @@ import Handler.Graphics.PDFKit.AfmFont.TimesBoldItalic
 import Handler.Graphics.PDFKit.AfmFont.Symbol
 import Handler.Graphics.PDFKit.AfmFont.ZapfDingbats
 
+-----------------------------------------------
+
+data DocumentBuilderM a = DocumentBuilderM [Action] a
+
+type DocumentBuilder = DocumentBuilderM ()
+
+instance Functor DocumentBuilderM where
+  fmap = liftM
+
+instance Applicative DocumentBuilderM where
+  pure  = return
+  (<*>) = ap
+
+instance Monad DocumentBuilderM where
+  return a = DocumentBuilderM [] a
+  DocumentBuilderM actions1 a >>= f =
+    let DocumentBuilderM actions2 b = f a
+    in  DocumentBuilderM (actions1 ++ actions2) b
+
+documentAction :: Action -> DocumentBuilder
+documentAction action = DocumentBuilderM [action] ()
+
+-----------------------------------------------
+
+data PageBuilderM a = PageBuilderM [Action] a
+
+type PageBuilder = PageBuilderM ()
+
+instance Functor PageBuilderM where
+  fmap = liftM
+
+instance Applicative PageBuilderM where
+  pure  = return
+  (<*>) = ap
+
+instance Monad PageBuilderM where
+  return a = PageBuilderM [] a
+  PageBuilderM actions1 a >>= f =
+    let PageBuilderM actions2 b = f a
+    in  PageBuilderM (actions1 ++ actions2) b
+
+pageAction :: Action -> PageBuilder
+pageAction action = PageBuilderM [action] ()
+
+-----------------------------------------------
+
 class ToByteStringLines a where
   toByteStringLines :: a -> [ByteString]
 
 class IsExecutableAction a where
   execute :: a -> PdfDocument -> PdfDocument
-
-data PdfBuilderM a = PdfBuilderM [Action] a
-
-type PdfBuilder = PdfBuilderM ()
-
-instance Functor PdfBuilderM where
-  fmap = liftM
-
-instance Applicative PdfBuilderM where
-  pure  = return
-  (<*>) = ap
-
-instance Monad PdfBuilderM where
-  return a = PdfBuilderM [] a
-  PdfBuilderM actions1 a >>= f =
-    let PdfBuilderM actions2 b = f a
-    in  PdfBuilderM (actions1 ++ actions2) b
 
 -----------------------------------------------
 
@@ -750,13 +779,20 @@ data Action =
   | ActionTextAt Text Double Double
   | ActionText Text
   | ActionMoveDown
-
-build :: Action -> PdfBuilder
-build action = PdfBuilderM [action] ()
+  | ActionComposite [Action]
 
 -----------------------------------------------
 
 instance IsExecutableAction Action where
+
+  execute (ActionComposite actions) pdfDoc =
+    pdfDoc'
+    where
+      pdfDoc' =
+        L.foldl
+        (\acc action -> execute action acc)
+        pdfDoc
+        actions
 
   execute (ActionInfoSetProducer text) pdfDoc =
     pdfDoc

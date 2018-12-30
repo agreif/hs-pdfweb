@@ -15,23 +15,23 @@ samplePdfDoc = do
   return $ buildPdfDoc now timeZone $ do
     producer "sample producer"
     creator "sample creator"
-    page
-    pageSize sA4
-    layout landscape
-    text "default x y"
-    text "foo ATyg"
-    font courierBold
-    text "bar ATyg"
-    text "baz ATyg"
-    textAt "x:300 y:100" 300 100
-    font timesRoman
-    text "foo2 ATyg"
-    text "bar2 ATyg"
-    textAt "x:300 y:200" 300 200
-    fontSize 12
-    font helveticaOblique
-    text "foo3 ATyg"
-    text "bar3 ATyg"
+    page $ do
+      pageSize sA4
+      layout landscape
+      text "default x y"
+      text "foo ATyg"
+      font courierBold
+      text "bar ATyg"
+      text "baz ATyg"
+      textAt "x:300 y:100" 300 100
+      font timesRoman
+      text "foo2 ATyg"
+      text "bar2 ATyg"
+      textAt "x:300 y:200" 300 200
+      fontSize 12
+      font helveticaOblique
+      text "foo3 ATyg"
+      text "bar3 ATyg"
 
 getSamplePdfJsonR :: Handler Value
 getSamplePdfJsonR = do
