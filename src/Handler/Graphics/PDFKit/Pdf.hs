@@ -404,7 +404,9 @@ instance ToByteStringLines (PdfContents, PdfPage) where
       translateOrigin = "1 0 0 -1 0 " ++ (doubleToText pageHeight) ++ " cm"
       translatePos pdfText =
         "1 0 0 1 " ++ (doubleToText $ pdfTextX pdfText)
-        ++ " " ++ (doubleToText $ pageHeight-(pdfTextY pdfText)) ++ " Tm"
+        ++ " " ++ (doubleToText $ pageHeight-(pdfTextY pdfText)
+                  -(dy (pdfTextStandardFont pdfText) (pdfTextFontSize pdfText))
+                  ) ++ " Tm"
       streamLength :: Int
       streamLength = length $ encodeUtf8 $ unlines streamTextLines
 
@@ -414,6 +416,7 @@ data PdfText = PdfText
   { pdfTextText :: Text
   , pdfTextX :: Double
   , pdfTextY :: Double
+  , pdfTextStandardFont :: PdfStandardFont
   , pdfTextFont :: Maybe PdfFont
   , pdfTextFontSize :: Double
   }
@@ -423,6 +426,7 @@ instance ToJSON PdfText where
     [ "text" .= pdfTextText o
     , "x" .= pdfTextX o
     , "y" .= pdfTextY o
+    , "standardFont" .= pdfTextStandardFont o
     , "font" .= pdfTextFont o
     , "fontSize" .= pdfTextFontSize o
     ]
@@ -1030,6 +1034,7 @@ instance IsExecutableAction Action where
                       { pdfTextText = t
                       , pdfTextX = x
                       , pdfTextY = y
+                      , pdfTextStandardFont = pdfPageCurrentFont lastPage
                       , pdfTextFont = currentPdfFont pdfDoc
                       , pdfTextFontSize = pdfPageCurrentFontSize lastPage
                       }
