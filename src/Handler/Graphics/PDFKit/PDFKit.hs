@@ -22,7 +22,7 @@ page (PageBuilderM userActions _) = documentAction $ ActionComposite actions
 font :: PdfStandardFont -> PageBuilder
 font = pageAction . ActionFont
 
-fontSize :: Int -> PageBuilder
+fontSize :: Double -> PageBuilder
 fontSize = pageAction . ActionFontSetSize
 
 pageSize :: PdfPageSize -> PageBuilder
