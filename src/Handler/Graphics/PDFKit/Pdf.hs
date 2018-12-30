@@ -652,6 +652,15 @@ instance ToJSON PdfStandardFont where
     , "encoding" .= pdfStandardFontEncoding o
     ]
 
+dy :: PdfStandardFont -> Double -> Double
+dy stdFont size =
+  case maybeAscender of
+    Just ascender -> ascender / 1000 * size
+    _ -> 0
+  where
+    afmFont = pdfStandardFontAfmFont stdFont
+    maybeAscender = afmFontAscender afmFont
+
 fontLineHeight :: PdfStandardFont -> Double -> Double
 fontLineHeight stdFont size =
   case (maybeAscender, maybeDescender) of
@@ -662,7 +671,7 @@ fontLineHeight stdFont size =
     maybeAscender = afmFontAscender afmFont
     maybeDescender = afmFontDescender afmFont
     lineGap = case (maybeAscender, maybeDescender) of
-      (Just asce, Just desce) -> top - bottom - (asce - desce);
+      (Just ascender, Just descender) -> top - bottom - ascender + descender;
       _ -> 0
     (top, bottom) = let (_, b, _, t) = afmFontFontBBox afmFont
                     in (t, b)

@@ -42,15 +42,15 @@ margins t l b r = pageAction $ ActionPageSetMargins t l b r
 
 textAt :: Text -> Double -> Double -> PageBuilder
 textAt t x y = do
-  pageAction ActionMoveDown
   pageAction ActionFontAddIfMissing
   pageAction $ ActionTextAt t x y
+  pageAction ActionMoveDown
 
 text :: Text -> PageBuilder
 text t = do
-  pageAction ActionMoveDown
   pageAction ActionFontAddIfMissing
   pageAction $ ActionText t
+  pageAction ActionMoveDown
 
 moveDown :: PageBuilder
 moveDown = pageAction ActionMoveDown
