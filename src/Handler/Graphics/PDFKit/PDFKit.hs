@@ -8,55 +8,57 @@ import qualified Data.ByteString.Char8 as B8
 import Data.Time
 import Handler.Graphics.PDFKit.Pdf
 
-producer :: Text -> PdfBuilder
-producer = build . ActionInfoSetProducer
+producer :: Text -> DocumentBuilder
+producer = documentAction . ActionInfoSetProducer
 
-creator :: Text -> PdfBuilder
-creator = build . ActionInfoSetCreator
+creator :: Text -> DocumentBuilder
+creator = documentAction . ActionInfoSetCreator
 
-font :: PdfStandardFont -> PdfBuilder
-font = build . ActionFont
+page :: PageBuilderM a -> DocumentBuilder
+page (PageBuilderM userActions _) = documentAction $ ActionComposite actions
+  where
+    actions = [ActionPage] ++ userActions
 
-fontSize :: Int -> PdfBuilder
-fontSize = build . ActionFontSetSize
+font :: PdfStandardFont -> PageBuilder
+font = pageAction . ActionFont
 
-page :: PdfBuilder
-page = build ActionPage
+fontSize :: Int -> PageBuilder
+fontSize = pageAction . ActionFontSetSize
 
-pageSize :: PdfPageSize -> PdfBuilder
-pageSize = build . ActionPageSetSize
+pageSize :: PdfPageSize -> PageBuilder
+pageSize = pageAction . ActionPageSetSize
 
-pageSizeCustom :: Double -> Double -> PdfBuilder
-pageSizeCustom w h = build $ ActionPageSetSizeCustom w h
+pageSizeCustom :: Double -> Double -> PageBuilder
+pageSizeCustom w h = pageAction $ ActionPageSetSizeCustom w h
 
-layout :: PdfPageLayout -> PdfBuilder
-layout = build . ActionPageSetLayout
+layout :: PdfPageLayout -> PageBuilder
+layout = pageAction . ActionPageSetLayout
 
-pageMargin :: Double -> PdfBuilder
-pageMargin = build . ActionPageSetMargin
+margin :: Double -> PageBuilder
+margin = pageAction . ActionPageSetMargin
 
-pageMargins :: Double -> Double -> Double -> Double -> PdfBuilder
-pageMargins t l b r = build $ ActionPageSetMargins t l b r
+margins :: Double -> Double -> Double -> Double -> PageBuilder
+margins t l b r = pageAction $ ActionPageSetMargins t l b r
 
-textAt :: Text -> Double -> Double -> PdfBuilder
+textAt :: Text -> Double -> Double -> PageBuilder
 textAt t x y = do
-  build ActionMoveDown
-  build ActionFontAddIfMissing
-  build $ ActionTextAt t x y
+  pageAction ActionMoveDown
+  pageAction ActionFontAddIfMissing
+  pageAction $ ActionTextAt t x y
 
-text :: Text -> PdfBuilder
+text :: Text -> PageBuilder
 text t = do
-  build ActionMoveDown
-  build ActionFontAddIfMissing
-  build $ ActionText t
+  pageAction ActionMoveDown
+  pageAction ActionFontAddIfMissing
+  pageAction $ ActionText t
 
-moveDown :: PdfBuilder
-moveDown = build ActionMoveDown
+moveDown :: PageBuilder
+moveDown = pageAction ActionMoveDown
 
 -----------------------------------------------
 
-buildPdfDoc :: UTCTime -> TimeZone -> PdfBuilderM b -> PdfDocument
-buildPdfDoc now timeZone (PdfBuilderM userActions _) =
+buildPdfDoc :: UTCTime -> TimeZone -> DocumentBuilderM a -> PdfDocument
+buildPdfDoc now timeZone (DocumentBuilderM userActions _) =
   L.foldl
   (\pdfDoc action -> execute action pdfDoc)
   (initialPdfDocument now timeZone)
