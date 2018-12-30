@@ -22,7 +22,7 @@ intToText :: Int -> Text
 intToText i = pack . show $ i
 
 doubleToText :: Double -> Text
-doubleToText x = pack $ printf "%.2f" x
+doubleToText x = pack $ show $ x
 
 ref :: Int -> Text
 ref objId = intToText objId ++ " 0 R"
