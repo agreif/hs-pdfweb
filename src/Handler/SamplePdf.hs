@@ -17,8 +17,9 @@ samplePdfDoc = do
     page $ do
       pageSize sLetter
       layout portrait
+      text "ü ä=ã, ö=õ, ü=ũ"
       text "default x y"
-      text "foo ATyg - ä ö ü"
+      text "foo ATyg"
       text "foo ATyg"
     --   font courierBold
     --   text "bar ATyg"
