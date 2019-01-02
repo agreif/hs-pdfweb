@@ -5,8 +5,7 @@ module Handler.SamplePdf where
 import Import
 import qualified Data.Text as T
 import Data.Time
-import Handler.Graphics.PDFKit.PDFKit
-import Handler.Graphics.PDFKit.Pdf
+import PdfKit
 
 samplePdfDoc :: Handler PdfDocument
 samplePdfDoc = do
@@ -19,7 +18,7 @@ samplePdfDoc = do
       pageSize sLetter
       layout portrait
       text "default x y"
-      text "foo ATyg"
+      text "foo ATyg - ä ö ü"
       text "foo ATyg"
     --   font courierBold
     --   text "bar ATyg"
