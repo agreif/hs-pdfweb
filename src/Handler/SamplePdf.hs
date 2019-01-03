@@ -1,26 +1,28 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
+
 module Handler.SamplePdf where
 
-import Import
 import qualified Data.Text as T
 import Data.Time
+import Import
 import PdfKit
 
 samplePdfDoc :: Handler PdfDocument
 samplePdfDoc = do
   timeZone <- liftIO getCurrentTimeZone
   now <- liftIO getCurrentTime
-  return $ buildPdfDoc now timeZone $ do
-    producer "sample producer"
-    creator "sample creator"
-    page $ do
-      pageSize sLetter
-      layout portrait
-      text "ü ä=ã, ö=õ, ü=ũ"
-      text "default x y"
-      text "foo ATyg"
-      text "foo ATyg"
+  return $
+    buildPdfDoc now timeZone $ do
+      producer "sample producer"
+      creator "sample creator"
+      page $ do
+        pageSize sLetter
+        layout portrait
+        text "ü ä=ã, ö=õ, ü=ũ"
+        text "default x y"
+        text "foo ATyg"
+        text "foo ATyg"
     --   font courierBold
     --   text "bar ATyg"
     --   text "baz ATyg"
@@ -42,12 +44,8 @@ samplePdfDoc = do
 getSamplePdfJsonR :: Handler Value
 getSamplePdfJsonR = do
   pdfDoc <- samplePdfDoc
-  let pdfDoc' = pdfDoc { pdfDocumentHeaderLines = [] }
-  return $
-    toJSON
-    ( pdfDoc'
-    , encodePdf' pdfDoc'
-    )
+  let pdfDoc' = pdfDoc {pdfDocumentHeaderLines = []}
+  return $ toJSON (pdfDoc', encodePdf' pdfDoc')
 
 getSamplePdfInlineR :: Handler TypedContent
 getSamplePdfInlineR = do
