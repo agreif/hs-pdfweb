@@ -17,20 +17,26 @@ samplePdfDoc = do
       producer "sample producer"
       creator "sample creator"
       pageA4Landscape $ do
-        text "22"
-        text "33"
-      page $ do
-        pageSize sLetter
-        layout portrait
-        text "ü ä=ã, ö=õ, ü=ũ"
-        text "foo ATyg"
+        text $ do
+          content "ü ä=ã, ö=õ, ü=ũ"
+          font courier
+          fontSize 12
+        textHelvetica24 $ do
+          textPos 100 100
+          content "ü ä=ã, ö=õ, ü=ũ"
+        textHelvetica24 $ do
+          content "foo"
+        textHelvetica24 $ do
+          content "bar"
   where
-    pageA4Landscape :: PageBuilder -> DocumentBuilder
-    pageA4Landscape =
-      pageTemplate $ do
-        pageSize sLetter
-        layout landscape
-        text "11"
+    pageA4Landscape :: PdfPageBuilder -> PdfDocumentBuilder
+    pageA4Landscape = pageTemplate $ do
+      pageSize sLetter
+      layout landscape
+    textHelvetica24 :: PdfTextBuilder -> PdfPageBuilder
+    textHelvetica24 = textTemplate $ do
+      font helvetica
+      fontSize 24
 
 getSamplePdfJsonR :: Handler Value
 getSamplePdfJsonR = do
