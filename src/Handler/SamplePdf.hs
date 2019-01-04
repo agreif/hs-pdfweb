@@ -27,9 +27,11 @@ samplePdfDoc = do
           content "ü ä=ã, ö=õ, ü=ũ"
         textHelvetica24 $ do
           textColorRgb 0 255 0
+          textFillOpacity 0.25
           content "foo"
         textHelvetica24 $ do
           textColorCmyk 0 100 0 90
+          textFillOpacity 0.5
           content "bar"
   where
     pageA4Landscape :: PdfPageBuilder -> PdfDocumentBuilder
