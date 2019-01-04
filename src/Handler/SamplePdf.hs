@@ -13,9 +13,10 @@ samplePdfDoc = do
   timeZone <- liftIO getCurrentTimeZone
   now <- liftIO getCurrentTime
   return $
-    buildPdfDoc now timeZone $ do
+    buildPdfDoc $ do
       producer "sample producer"
       creator "sample creator"
+      creationDate now timeZone
       pageA4Landscape $ do
         text $ do
           content "ü ä=ã, ö=õ, ü=ũ"
