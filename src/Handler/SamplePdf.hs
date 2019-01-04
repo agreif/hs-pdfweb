@@ -26,8 +26,10 @@ samplePdfDoc = do
           textPos 100 100
           content "ü ä=ã, ö=õ, ü=ũ"
         textHelvetica24 $ do
+          textColorRgb 0 255 0
           content "foo"
         textHelvetica24 $ do
+          textColorCmyk 0 100 0 90
           content "bar"
   where
     pageA4Landscape :: PdfPageBuilder -> PdfDocumentBuilder
