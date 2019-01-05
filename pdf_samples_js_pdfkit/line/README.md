@@ -1,3 +1,4 @@
+```javascript
 // create a document and pipe to a blob
 var doc = new PDFDocument({autoFirstPage: false, compress: false});
 var stream = doc.pipe(blobStream());
@@ -14,3 +15,4 @@ doc.end();
 stream.on('finish', function() {
   iframe.src = stream.toBlobURL('application/pdf');
 });
+```
