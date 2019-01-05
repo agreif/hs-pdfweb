@@ -35,13 +35,15 @@ samplePdfDoc = do
           content "bar"
   where
     pageA4Landscape :: PdfPageBuilder -> PdfDocumentBuilder
-    pageA4Landscape = pageTemplate $ do
-      pageSize sLetter
-      layout landscape
+    pageA4Landscape =
+      pageTemplate $ do
+        pageSize sLetter
+        layout landscape
     textHelvetica24 :: PdfTextBuilder -> PdfPageBuilder
-    textHelvetica24 = textTemplate $ do
-      font helvetica
-      fontSize 24
+    textHelvetica24 =
+      textTemplate $ do
+        font helvetica
+        fontSize 24
 
 getSamplePdfJsonR :: Handler Value
 getSamplePdfJsonR = do
