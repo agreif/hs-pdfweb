@@ -8,6 +8,7 @@ doc.font("Helvetica",24);
 
 doc.moveTo(150, 150)
    .lineTo(200, 200)
+   .lineWidth(10)
    .stroke();
 
 // end and display the document in the iframe to the right
