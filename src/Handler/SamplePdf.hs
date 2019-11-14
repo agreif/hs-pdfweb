@@ -22,15 +22,17 @@ samplePdfDoc = do
           linePoint 100 100
           linePoint 100 200
           linePoint 200 200
+          lineWidth 10
           lineStroke
         text $ do
           textPos 180 190
-          textColorCmyk 10 60 60 80
+          textColorCmyk 100 100 0 0
           textFillOpacity 1
           font helvetica
-          fontSize 24
+          fontSize 40
           content "foo bar"
-        textHelvetica24BlueOpaque $ do content "ü ä=ã, ö=õ, ü=ũ"
+        textHelvetica24BlueOpaque $ do
+          content "ü ä=ã, ö=õ, ü=ũ"
   where
     pageA4Landscape :: PdfPageBuilder -> PdfDocumentBuilder
     pageA4Landscape =
