@@ -1,10 +1,10 @@
-{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ViewPatterns #-}
-{-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 
 module Foundation where
 
@@ -23,16 +23,17 @@ import Yesod.Default.Util (addStaticContentExternal)
 -- starts running, such as database connections. Every handler will have
 -- access to the data present here.
 data App = App
-  { appSettings :: AppSettings
-  , appStatic :: Static -- ^ Settings for static file serving.
-  , appHttpManager :: Manager
-  , appLogger :: Logger
+  { appSettings :: AppSettings,
+    -- | Settings for static file serving.
+    appStatic :: Static,
+    appHttpManager :: Manager,
+    appLogger :: Logger
   }
 
 data MenuItem = MenuItem
-  { menuItemLabel :: Text
-  , menuItemRoute :: Route App
-  , menuItemAccessCallback :: Bool
+  { menuItemLabel :: Text,
+    menuItemRoute :: Route App,
+    menuItemAccessCallback :: Bool
   }
 
 data MenuTypes
@@ -58,31 +59,33 @@ type Form x = Html -> MForm (HandlerFor App) (FormResult x, Widget)
 
 -- Please see the documentation for the Yesod typeclass. There are a number
 -- of settings which can be configured by overriding methods here.
-instance Yesod App
-    -- Controls the base of generated URLs. For more information on modifying,
-    -- see: https://github.com/yesodweb/yesod/wiki/Overriding-approot
-                                                                      where
+instance Yesod App where
+  -- Controls the base of generated URLs. For more information on modifying,
+  -- see: https://github.com/yesodweb/yesod/wiki/Overriding-approot
+
   approot :: Approot App
   approot =
     ApprootRequest $ \app req ->
       case appRoot $ appSettings app of
         Nothing -> getApprootText guessApproot app req
         Just root -> root
-    -- Store session data on the client in encrypted cookies,
-    -- default session idle timeout is 120 minutes
+
+  -- Store session data on the client in encrypted cookies,
+  -- default session idle timeout is 120 minutes
   makeSessionBackend :: App -> IO (Maybe SessionBackend)
   makeSessionBackend _ =
-    Just <$>
-    defaultClientSessionBackend
-      120 -- timeout in minutes
-      "config/client_session_key.aes"
-    -- Yesod Middleware allows you to run code before and after each handler function.
-    -- The defaultYesodMiddleware adds the response header "Vary: Accept, Accept-Language" and performs authorization checks.
-    -- Some users may also want to add the defaultCsrfMiddleware, which:
-    --   a) Sets a cookie with a CSRF token in it.
-    --   b) Validates that incoming write requests include that token in either a header or POST parameter.
-    -- To add it, chain it together with the defaultMiddleware: yesodMiddleware = defaultYesodMiddleware . defaultCsrfMiddleware
-    -- For details, see the CSRF documentation in the Yesod.Core.Handler module of the yesod-core package.
+    Just
+      <$> defaultClientSessionBackend
+        120 -- timeout in minutes
+        "config/client_session_key.aes"
+
+  -- Yesod Middleware allows you to run code before and after each handler function.
+  -- The defaultYesodMiddleware adds the response header "Vary: Accept, Accept-Language" and performs authorization checks.
+  -- Some users may also want to add the defaultCsrfMiddleware, which:
+  --   a) Sets a cookie with a CSRF token in it.
+  --   b) Validates that incoming write requests include that token in either a header or POST parameter.
+  -- To add it, chain it together with the defaultMiddleware: yesodMiddleware = defaultYesodMiddleware . defaultCsrfMiddleware
+  -- For details, see the CSRF documentation in the Yesod.Core.Handler module of the yesod-core package.
   yesodMiddleware :: ToTypedContent res => Handler res -> Handler res
   yesodMiddleware = defaultYesodMiddleware
   defaultLayout :: Widget -> Handler Html
@@ -90,16 +93,16 @@ instance Yesod App
     master <- getYesod
     mmsg <- getMessage
     mcurrentRoute <- getCurrentRoute
-        -- Get the breadcrumbs, as defined in the YesodBreadcrumbs instance.
+    -- Get the breadcrumbs, as defined in the YesodBreadcrumbs instance.
     (title, parents) <- breadcrumbs
-        -- Define the menu items of the header.
+    -- Define the menu items of the header.
     let menuItems =
           [ NavbarLeft $
-            MenuItem
-              { menuItemLabel = "Home"
-              , menuItemRoute = HomeR
-              , menuItemAccessCallback = True
-              }
+              MenuItem
+                { menuItemLabel = "Home",
+                  menuItemRoute = HomeR,
+                  menuItemAccessCallback = True
+                }
           ]
     let navbarLeftMenuItems = [x | NavbarLeft x <- menuItems]
     let navbarRightMenuItems = [x | NavbarRight x <- menuItems]
@@ -107,34 +110,40 @@ instance Yesod App
           [x | x <- navbarLeftMenuItems, menuItemAccessCallback x]
     let navbarRightFilteredMenuItems =
           [x | x <- navbarRightMenuItems, menuItemAccessCallback x]
-        -- We break up the default layout into two components:
-        -- default-layout is the contents of the body tag, and
-        -- default-layout-wrapper is the entire page. Since the final
-        -- value passed to hamletToRepHtml cannot be a widget, this allows
-        -- you to use normal widget features in default-layout.
+    -- We break up the default layout into two components:
+    -- default-layout is the contents of the body tag, and
+    -- default-layout-wrapper is the entire page. Since the final
+    -- value passed to hamletToRepHtml cannot be a widget, this allows
+    -- you to use normal widget features in default-layout.
     pc <-
       widgetToPageContent $ do
         addStylesheet $ StaticR css_bootstrap_css
         $(widgetFile "default-layout")
     withUrlRenderer $(hamletFile "templates/default-layout-wrapper.hamlet")
   isAuthorized ::
-       Route App -- ^ The route the user is visiting.
-    -> Bool -- ^ Whether or not this is a "write" request.
-    -> Handler AuthResult
-    -- Routes not requiring authenitcation.
+    -- | The route the user is visiting.
+    Route App ->
+    -- | Whether or not this is a "write" request.
+    Bool ->
+    Handler AuthResult
+  -- Routes not requiring authenitcation.
   isAuthorized FaviconR _ = return Authorized
   isAuthorized RobotsR _ = return Authorized
-    -- Default to Authorized for now.
+  -- Default to Authorized for now.
   isAuthorized _ _ = return Authorized
-    -- This function creates static content files in the static folder
-    -- and names them based on a hash of their content. This allows
-    -- expiration dates to be set far in the future without worry of
-    -- users receiving stale content.
+
+  -- This function creates static content files in the static folder
+  -- and names them based on a hash of their content. This allows
+  -- expiration dates to be set far in the future without worry of
+  -- users receiving stale content.
   addStaticContent ::
-       Text -- ^ The file extension
-    -> Text -- ^ The MIME content type
-    -> LByteString -- ^ The contents of the file
-    -> Handler (Maybe (Either Text (Route App, [(Text, Text)])))
+    -- | The file extension
+    Text ->
+    -- | The MIME content type
+    Text ->
+    -- | The contents of the file
+    LByteString ->
+    Handler (Maybe (Either Text (Route App, [(Text, Text)])))
   addStaticContent ext mime content = do
     master <- getYesod
     let staticDir = appStaticDir $ appSettings master
@@ -146,28 +155,32 @@ instance Yesod App
       ext
       mime
       content
-        -- Generate a unique filename based on the content itself
     where
+      -- Generate a unique filename based on the content itself
+
       genFileName lbs = "autogen-" ++ base64md5 lbs
-    -- What messages should be logged. The following includes all messages when
-    -- in development, and warnings and errors in production.
+
+  -- What messages should be logged. The following includes all messages when
+  -- in development, and warnings and errors in production.
   shouldLogIO :: App -> LogSource -> LogLevel -> IO Bool
   shouldLogIO app _source level =
     return $
-    appShouldLogAll (appSettings app) ||
-    level == LevelWarn || level == LevelError
+      appShouldLogAll (appSettings app)
+        || level == LevelWarn
+        || level == LevelError
   makeLogger :: App -> IO Logger
   makeLogger = return . appLogger
 
 -- Define breadcrumbs.
-instance YesodBreadcrumbs App
-    -- Takes the route that the user is currently on, and returns a tuple
-    -- of the 'Text' that you want the label to display, and a previous
-    -- breadcrumb route.
-                         where
+instance YesodBreadcrumbs App where
+  -- Takes the route that the user is currently on, and returns a tuple
+  -- of the 'Text' that you want the label to display, and a previous
+  -- breadcrumb route.
+
   breadcrumb ::
-       Route App -- ^ The route the user is visiting currently.
-    -> Handler (Text, Maybe (Route App))
+    -- | The route the user is visiting currently.
+    Route App ->
+    Handler (Text, Maybe (Route App))
   breadcrumb HomeR = return ("Home", Nothing)
   breadcrumb _ = return ("home", Nothing)
 

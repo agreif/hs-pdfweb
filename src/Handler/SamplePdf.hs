@@ -1,5 +1,5 @@
-{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 
 module Handler.SamplePdf where
 
@@ -12,8 +12,9 @@ samplePdfDoc :: Handler PdfDocument
 samplePdfDoc = do
   timeZone <- liftIO getCurrentTimeZone
   now <- liftIO getCurrentTime
-  return $
-    buildPdfDoc $ do
+  return
+    $ buildPdfDoc
+    $ do
       producer "sample producer"
       creator "sample creator"
       creationDate now timeZone
