@@ -51,7 +51,7 @@ samplePdfDoc = do
 getSamplePdfJsonR :: Handler Value
 getSamplePdfJsonR = do
   pdfDoc <- samplePdfDoc
-  let pdfDoc' = pdfDoc {pdfDocumentHeaderLines = []}
+  let pdfDoc' = pdfDoc {_pdfDocumentHeaderLines = []}
   return $ toJSON (pdfDoc', encodePdf' pdfDoc')
 
 getSamplePdfInlineR :: Handler TypedContent
