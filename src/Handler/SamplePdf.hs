@@ -27,7 +27,7 @@ samplePdfDoc = do
           lineStroke
         text $ do
           textPos 180 190
-          textColorCmyk 100 100 0 0
+          textColorCmyk 100 0 0 0
           textFillOpacity 1
           font helvetica
           fontSize 40
