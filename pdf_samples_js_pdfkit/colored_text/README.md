@@ -7,9 +7,9 @@ doc.addPage({margin: 200});
 doc
     .fillColor('red')
     .text("abc")
-    .fillColor('green')
+    .fillColor([100, 0, 0, 0])
     .text("def");
-   
+
 // end and display the document in the iframe to the right
 doc.end();
 stream.on('finish', function() {
